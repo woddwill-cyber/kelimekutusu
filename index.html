@@ -489,7 +489,7 @@ First line: a short title (no more than 6 words). Then a blank line. Then the st
 
   // --- GEMINI API BAĞLANTISI ---
   const apiKey = "AQ.Ab8RN6LL-L8z5YLLRxZin3RK8gyW0245hYb-ifjNGBFxiQXqrQ"; // Google AI Studio'dan aldığın anahtarı tırnak içine yaz
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
   try{
     const response = await fetch(url, {
