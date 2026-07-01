@@ -488,8 +488,8 @@ Write plain prose only: no markdown, no bullet points, no asterisks, no word lis
 First line: a short title (no more than 6 words). Then a blank line. Then the story itself, in 2-4 paragraphs.`;
 
   // --- GEMINI API BAĞLANTISI ---
-  const apiKey = "AQ.Ab8RN6LL-L8z5YLLRxZin3RK8gyW0245hYb-ifjNGBFxiQXqrQ"; // Google AI Studio'dan aldığın anahtarı tırnak içine yaz
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+  const apiKey = "AQ.Ab8RN6LL-L8z5YLLRxZin3RK8gyW0245hYb-ifjNGBFxiQXqrQ"; // Lütfen güvenlik için yeni oluşturduğunuz anahtarı girin
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   try{
     const response = await fetch(url, {
