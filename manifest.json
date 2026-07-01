@@ -1,0 +1,16 @@
+{
+  "name": "Kelime Kutusu Uygulaması",
+  "short_name": "KelimeKutusu",
+  "start_url": "Diluygulaması.html",
+  "display": "standalone",
+  "background_color": "#F6EFDE",
+  "theme_color": "#2B3A4A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Kelime Kutusu</title>
+<link rel="manifest" href="manifest.json">
+<div style="margin: 15px 0;">
+      <button class="btn stamp" onclick="selectNewSet()" style="font-size: 13px; padding: 10px 20px;">🎲 Rastgele 30 Kelime Seç</button>
+    </div>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6EFDE;
+    --paper-dark:#EAE0C7;
+    --card:#FBF6EA;
+    --ink:#2B3A4A;
+    --ink-soft:#5B6B7A;
+    --kraft:#8B6F47;
+    --kraft-light:#D8C6A3;
+    --stamp:#C1502E;
+    --stamp-dark:#9C3D22;
+    --sage:#5E7A4F;
+    --sage-light:#E1E9D6;
+    --line: rgba(43,58,74,0.16);
+    --shadow: 0 6px 16px rgba(43,58,74,0.12), 0 1px 3px rgba(43,58,74,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, rgba(43,58,74,0.05) 1px, transparent 0) 0 0/22px 22px,
+      var(--paper);
+    color:var(--ink);
+    font-family:'Fraunces', Georgia, serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .mono{ font-family:'Space Mono', monospace; letter-spacing:0.02em; }
+  .wrap{ max-width:760px; margin:0 auto; }
+
+  /* Header */
+  header{ text-align:center; margin-bottom:22px; }
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--kraft);
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:clamp(30px, 6vw, 42px);
+    font-weight:700;
+    margin:0 0 6px;
+    font-style:italic;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin-bottom:18px;
+  }
+
+  /* Progress rail: 15 index-card dots */
+  .progress-rail{
+    display:flex; justify-content:center; gap:4px; flex-wrap:wrap;
+    margin:0 auto 26px; max-width:620px;
+  }
+  .dot{
+    width:13px;height:17px;
+    background:var(--card);
+    border:1px solid var(--kraft-light);
+    border-radius:2px;
+    position:relative;
+    transition:all .25s ease;
+  }
+  .dot::before{
+    content:'';
+    position:absolute; top:3px; left:2px; right:2px; height:1px;
+    background:var(--line);
+    box-shadow:0 3px 0 var(--line);
+  }
+  .dot.learning{ background:var(--kraft-light); border-color:var(--kraft); }
+  .dot.known{ background:var(--sage); border-color:var(--sage); }
+  .dot.known::before{ display:none; }
+
+  /* Tabs styled like card-catalog drawer labels */
+  nav.tabs{
+    display:flex; gap:6px; justify-content:center; flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  nav.tabs button{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    background:var(--paper-dark);
+    border:1.5px solid var(--kraft-light);
+    border-bottom:none;
+    color:var(--ink-soft);
+    padding:10px 16px 8px;
+    cursor:pointer;
+    border-radius:6px 6px 0 0;
+    position:relative;
+    top:1px;
+  }
+  nav.tabs button.active{
+    background:var(--card);
+    color:var(--stamp-dark);
+    border-color:var(--kraft);
+    box-shadow: 0 -3px 8px rgba(43,58,74,0.06);
+  }
+
+  .panel{
+    background:var(--card);
+    border:1.5px solid var(--kraft);
+    border-radius:0 8px 8px 8px;
+    padding:28px 24px;
+    box-shadow:var(--shadow);
+    min-height:380px;
+  }
+
+  .fc-pos{ font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;}
+  .fc-word{ font-size:34px; font-weight:700; margin-bottom:6px; text-align:center; }
+  .fc-example{ font-size:14px; color:var(--ink-soft); text-align:center; line-height:1.5; max-width:340px; margin:0 auto; }
+  .fc-controls{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  /* ---- Story ---- */
+  .story-empty{ text-align:center; padding:36px 10px; max-width:460px; margin:0 auto; }
+  .story-meta{ display:flex; justify-content:space-between; align-items:center; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:18px; flex-wrap:wrap; gap:10px; }
+  .story-title{ font-size:26px; font-weight:700; font-style:italic; margin-bottom:16px; color:var(--stamp-dark); }
+  .story-body{ font-size:16px; line-height:1.75; color:var(--ink); }
+  .story-body p{ margin:0 0 16px; }
+  .story-word{
+    background:var(--sage-light);
+    border-bottom:1.5px dotted var(--sage);
+    padding:0 2px;
+    border-radius:2px;
+    cursor:help;
+    font-weight:600;
+    color:var(--sage);
+  }
+  button.btn{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    padding:10px 18px;
+    border-radius:5px;
+    border:1.5px solid var(--kraft);
+    background:var(--paper-dark);
+    color:var(--ink);
+    cursor:pointer;
+    transition:transform .12s ease, background .15s ease;
+  }
+  button.btn:hover{ transform:translateY(-1px); }
+  button.btn.primary{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  button.btn.stamp{ background:var(--stamp); color:#fff; border-color:var(--stamp-dark); }
+  button.btn.sage{ background:var(--sage); color:#fff; border-color:#46603a; }
+  button.btn:disabled{ opacity:.4; cursor:default; }
+
+  /* ---- Matching ---- */
+  .match-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+  .match-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+  }
+  @media (max-width:480px){ .match-grid{ grid-template-columns:repeat(3,1fr);} }
+  .m-card{
+    aspect-ratio:1/1.05;
+    background:var(--paper-dark);
+    border:1.5px solid var(--kraft-light);
+    border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:6px;
+    font-size:13px; font-weight:600;
+    cursor:pointer;
+    user-select:none;
+    transition:all .2s ease;
+  }
+  .m-card.tr{ font-style:italic; font-weight:500; color:var(--sage); }
+  .m-card.selected{ border-color:var(--stamp); background:#fff2ea; }
+  .m-card.matched{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); opacity:.55; cursor:default; }
+  .m-card.wrong{ animation:shake .35s; border-color:var(--stamp); }
+  @keyframes shake{ 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+  .match-done{ text-align:center; padding:30px 10px; }
+
+  /* ---- Quiz ---- */
+  .quiz-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:18px; }
+  .quiz-prompt{ text-align:center; margin-bottom:22px; }
+  .quiz-word{ font-size:32px; font-weight:700; margin-bottom:4px; }
+  .quiz-instruction{ font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--kraft); }
+  .quiz-options{ display:grid; gap:10px; }
+  .q-opt{
+    text-align:left;
+    padding:14px 16px;
+    border-radius:6px;
+    border:1.5px solid var(--kraft-light);
+    background:var(--paper-dark);
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    cursor:pointer;
+    font-style:italic;
+  }
+  .q-opt:hover{ border-color:var(--kraft); }
+  .q-opt.correct{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); font-weight:600; }
+  .q-opt.incorrect{ background:#FBE4DC; border-color:var(--stamp); color:var(--stamp-dark); }
+  .q-opt:disabled{ cursor:default; }
+  .quiz-feedback{ margin-top:16px; text-align:center; font-size:14px; color:var(--ink-soft); min-height:20px;}
+  .quiz-end{ text-align:center; padding:20px 10px; }
+  .quiz-score{ font-size:46px; font-weight:700; color:var(--stamp); margin:10px 0;}
+
+  /* ---- Typing ---- */
+  .type-prompt{ text-align:center; margin-bottom:18px; }
+  .type-tr{ font-size:26px; font-style:italic; color:var(--sage); margin-bottom:8px; }
+  .type-example{ font-size:14px; color:var(--ink-soft); margin-bottom:4px; }
+  .type-blank{ font-family:'Space Mono',monospace; font-weight:700; color:var(--stamp); }
+  .type-row{ display:flex; gap:8px; justify-content:center; margin:18px 0 8px; flex-wrap:wrap; }
+  input.type-input{
+    font-family:'Space Mono',monospace;
+    font-size:16px;
+    padding:12px 14px;
+    border-radius:6px;
+    border:1.5px solid var(--kraft);
+    background:var(--paper);
+    color:var(--ink);
+    width:220px;
+    text-align:center;
+  }
+  input.type-input:focus{ outline:none; border-color:var(--stamp); }
+  input.type-input.correct{ border-color:var(--sage); background:var(--sage-light); }
+  input.type-input.incorrect{ border-color:var(--stamp); background:#FBE4DC; }
+  .type-feedback{ text-align:center; font-family:'Space Mono',monospace; font-size:12px; min-height:18px; margin-bottom:8px; color:var(--ink-soft);}
+  .type-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:16px; }
+
+  .review-section{ margin-top:26px; border-top:1.5px dashed var(--kraft-light); padding-top:18px; }
+  .review-title{
+    font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--stamp-dark); text-align:center; margin-bottom:14px;
+  }
+  .review-row{
+    display:grid; grid-template-columns:110px 1fr; gap:4px 14px;
+    align-items:start;
+    background:#FBE4DC;
+    border:1px solid var(--stamp);
+    border-radius:6px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .review-en{ font-weight:700; font-size:16px; color:var(--stamp-dark); align-self:center; }
+  .review-mid{ min-width:0; }
+  .review-tr{ font-style:italic; color:var(--ink); font-size:14px; }
+  .review-ex{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .review-given{
+    grid-column:1 / -1;
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft);
+    padding-top:4px; border-top:1px dashed rgba(43,58,74,0.15); margin-top:2px;
+  }
+  @media (max-width:480px){
+    .review-row{ grid-template-columns:1fr; }
+    .review-en{ align-self:auto; }
+  }
+
+  footer{ text-align:center; margin-top:22px; font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft-light); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrowLabel">kart · sözcük çekmecesi</div>
+    <h1>Kelime Kutusu</h1>
+    <div class="sub" id="subLabel">Kartları çevir, eşleştir, sına — kelimeleri kalıcı hafızaya yerleştir.</div>
+    <div class="progress-rail" id="progressRail"></div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="story" class="active">Hikaye</button>
+    <button data-tab="match">Eşleştirme</button>
+    <button data-tab="quiz">Çoktan Seçmeli</button>
+    <button data-tab="type">Yazma</button>
+  </nav>
+
+  <div class="panel" id="panel"></div>
+  <footer>ilerlemen bu oturumda hafızada tutulur · sayfayı yenilersen sıfırlanır</footer>
+</div>
+
+<script>
+// --- SENİN DEV KELİME HAVUZUN BURASI ---
+const ALL_WORDS = [
+  // Zamanla yeni kelimelerini bu formata uygun olarak alt alta ekleyeceksin.
+  // Örnek Format: {en:"ingilizce kelime", pos:"türü", tr:"türkçe anlamı", ex:"Örnek cümle ve ___ boşluk"},
+  {en:"dislocate", pos:"fiil", tr:"yerinden çıkarmak (eklem)", ex:"He fell and managed to ___ his shoulder."},
+  {en:"drench", pos:"fiil", tr:"sırılsıklam etmek", ex:"The sudden rain began to ___ everyone in the street."},
+  {en:"refrain", pos:"fiil/isim", tr:"kaçınmak; nakarat", ex:"Please ___ from talking during the film."},
+  {en:"barren", pos:"sıfat", tr:"kısır, çorak, verimsiz", ex:"The land was too ___ to grow anything."},
+  {en:"corny", pos:"sıfat", tr:"bayat, klişe (şaka/söz)", ex:"He told a ___ joke that made everyone groan."},
+  {en:"obscure", pos:"sıfat/fiil", tr:"belirsiz, bilinmeyen; gizlemek", ex:"The clouds began to ___ the mountain view."},
+  {en:"feisty", pos:"sıfat", tr:"hırçın, atak, cesur", ex:"The ___ puppy refused to back down."},
+  {en:"pair", pos:"isim/fiil", tr:"çift; eşleştirmek", ex:"She bought a new ___ of shoes."},
+  {en:"fatigue", pos:"isim", tr:"yorgunluk, bitkinlik", ex:"He felt a deep ___ after the long shift."},
+  {en:"considerable", pos:"sıfat", tr:"hatırı sayılır, önemli ölçüde", ex:"They made ___ progress on the project."},
+  {en:"squirm", pos:"fiil", tr:"kıvranmak, kıpırdanmak", ex:"The child began to ___ in his seat."},
+  {en:"envelope", pos:"isim", tr:"zarf", ex:"She sealed the letter inside an ___."},
+  {en:"obedient", pos:"sıfat", tr:"itaatkâr, söz dinleyen", ex:"The dog was calm and ___."},
+  {en:"chasm", pos:"isim", tr:"uçurum, derin yarık", ex:"A wide ___ separated the two viewpoints."},
+  {en:"snore", pos:"fiil/isim", tr:"horlamak; horlama", ex:"He tends to ___ loudly when he sleeps."},
+  {en:"inhale", pos:"fiil", tr:"nefes almak, içine çekmek", ex:"She paused to ___ the fresh mountain air."},
+  {en:"applause", pos:"isim", tr:"alkış", ex:"The crowd broke into ___ at the end."},
+  {en:"distribution", pos:"isim", tr:"dağıtım, dağılım", ex:"The company handles ___ across the region."},
+  {en:"staunch", pos:"sıfat", tr:"sadık, kararlı (destekçi)", ex:"He remained a ___ supporter of the cause."},
+  {en:"meager", pos:"sıfat", tr:"az, yetersiz, kıt", ex:"They survived on a ___ income."},
+  {en:"rinse", pos:"fiil", tr:"durulamak", ex:"___ the vegetables under cold water."},
+  {en:"nausea", pos:"isim", tr:"mide bulantısı", ex:"The smell gave her a sudden wave of ___."},
+  {en:"pout", pos:"fiil", tr:"dudak bükmek, somurtmak", ex:"She began to ___ when she didn't get her way."},
+  {en:"counsellor", pos:"isim", tr:"danışman", ex:"The school ___ helped him choose his classes."},
+  {en:"relative", pos:"isim/sıfat", tr:"akraba; göreceli", ex:"She invited every ___ to the wedding."},
+  {en:"rehearsal", pos:"isim", tr:"prova", ex:"The band scheduled a ___ before the concert."},
+  {en:"meticulously", pos:"zarf", tr:"titizlikle, büyük özenle", ex:"He cleaned the workshop ___."},
+  {en:"evenly", pos:"zarf", tr:"eşit şekilde, düzenli olarak", ex:"Spread the sauce ___ over the base."},
+  {en:"duvet", pos:"isim", tr:"yorgan", ex:"She pulled the ___ up to stay warm."},
+  {en:"syllable", pos:"isim", tr:"hece", ex:"The word 'banana' has three ___s."},
+  {en:"accusation", pos:"isim", tr:"suçlama", ex:"He denied the ___ completely."},
+  {en:"addicted", pos:"sıfat", tr:"bağımlı", ex:"She became ___ to her phone."},
+  {en:"necessity", pos:"isim", tr:"gereklilik, ihtiyaç", ex:"Clean water is a basic ___."},
+  {en:"absence", pos:"isim", tr:"yokluk, devamsızlık", ex:"His ___ from the meeting was noticed."},
+  {en:"rigor", pos:"isim", tr:"titizlik, sıkı disiplin", ex:"The experiment was carried out with scientific ___."},
+  {en:"saunter", pos:"fiil", tr:"ağır ağır yürümek, gezinmek", ex:"He ___ed into the room as if he owned it."},
+  {en:"furthermore", pos:"zarf", tr:"ayrıca, dahası", ex:"___, the report ignores recent data."},
+  {en:"falsify", pos:"fiil", tr:"tahrif etmek, sahtesini yapmak", ex:"He was accused of trying to ___ the records."},
+  {en:"incidentally", pos:"zarf", tr:"bu arada, tesadüfen", ex:"___, I saw your brother yesterday."},
+  {en:"makeshift", pos:"sıfat", tr:"eğreti, geçici", ex:"They built a ___ shelter from branches."},
+  {en:"permeate", pos:"fiil", tr:"yayılmak, sızmak, nüfuz etmek", ex:"The smell of coffee began to ___ the house."},
+  {en:"perpetual", pos:"sıfat", tr:"sürekli, daimi", ex:"The city seemed to live in a ___ state of noise."},
+  {en:"exaggerate", pos:"fiil", tr:"abartmak", ex:"He tends to ___ his achievements."},
+  {en:"trunk", pos:"isim", tr:"ağaç gövdesi / fil hortumu / bagaj", ex:"The elephant used its ___ to grab the branch."},
+  {en:"provenance", pos:"isim", tr:"köken, menşei", ex:"The ___ of the painting was unclear."},
+  {en:"wrestle", pos:"fiil", tr:"güreşmek, boğuşmak", ex:"The boys began to ___ on the grass."},
+  {en:"vein", pos:"isim", tr:"damar", ex:"The doctor located a ___ in his arm."},
+  {en:"binoculars", pos:"isim", tr:"dürbün", ex:"She used ___ to watch the birds."},
+  {en:"agitate", pos:"fiil", tr:"tedirgin etmek, çalkalamak, kışkırtmak", ex:"The loud noise began to ___ the baby."},
+  {en:"stern", pos:"sıfat", tr:"sert, katı (tavır)", ex:"The teacher gave him a ___ warning."},
+  {en:"swell", pos:"fiil", tr:"şişmek, kabarmak", ex:"His ankle began to ___ after the fall."},
+  {en:"sobriquet", pos:"isim", tr:"lakap", ex:"The city earned the ___ 'the Big Apple.'"},
+  {en:"poignant", pos:"sıfat", tr:"dokunaklı, hüzün verici", ex:"The film ended with a ___ farewell scene."},
+  {en:"precept", pos:"isim", tr:"ilke, öğüt, kural", ex:"The book is built around a simple ___."},
+  {en:"lousy", pos:"sıfat", tr:"berbat, kötü", ex:"The weather was ___ all weekend."},
+  {en:"nod", pos:"fiil/isim", tr:"başını sallamak (onay); baş sallama", ex:"She gave a small ___ in agreement."},
+  {en:"privilege", pos:"isim", tr:"ayrıcalık", ex:"Education should not be a ___ for the few."},
+  {en:"subsequent", pos:"sıfat", tr:"sonraki, müteakip", ex:"___ tests confirmed the diagnosis."},
+  {en:"upholstery", pos:"isim", tr:"döşeme (mobilya)", ex:"The car's ___ was made of soft leather."},
+  // ŞİMDİLİK TEST İÇİN KISA BİR LİSTE BIRAKTIM, BURAYI ZAMANLA DOLDURACAKSIN :)
+];
+
+let WORDS = []; // Aktif olarak ekranda görünen 30 kelimelik setimiz
+const LIMIT = 30; // Her sette kaç kelime olacağını buradan değiştirebilirsin
+let mastery = {};
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// Yeni kelime setini seçen asıl fonksiyonumuz
+function selectNewSet() {
+  // Havuzu karıştırıp limit kadar (örn: 30) kelime seçiyoruz
+  const karisik = shuffle([...ALL_WORDS]);
+  WORDS = karisik.slice(0, Math.min(LIMIT, ALL_WORDS.length));
+
+  // Arayüz yazılarını yeni kelime sayısına göre güncelliyoruz
+  document.getElementById('eyebrowLabel').textContent = WORDS.length + ' kart · sözcük çekmecesi';
+  document.getElementById('subLabel').textContent = 'Kartları çevir, eşleştir, sına — ' + WORDS.length + ' kelimeyi kalıcı hafızaya yerleştir.';
+
+  // Öğrenme durumunu (ilerleme çubuğunu) tamamen sıfırlıyoruz
+  mastery = {};
+  WORDS.forEach(w => mastery[w.en] = 'new');
+
+  // Geçmiş oyunların/hikayelerin hafızasını temizliyoruz ki eski kelimeler takılı kalmasın
+  storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
+  matchState = null;
+  quizState = null;
+  typeState = null;
+
+  // Ekranı yeni kelimelerle çiziyoruz
+  renderProgress();
+  const aktifTab = document.querySelector('nav.tabs button.active');
+  if(aktifTab) render(aktifTab.dataset.tab);
+}
+
+function bumpMastery(en, success){
+  const cur = mastery[en];
+  if(success){
+    mastery[en] = (cur === 'learning') ? 'known' : 'learning';
+  } else {
+    if(cur !== 'known') mastery[en] = 'learning';
+  }
+  renderProgress();
+}
+function setKnown(en, known){
+  mastery[en] = known ? 'known' : 'learning';
+  renderProgress();
+}
+
+function renderProgress(){
+  const rail = document.getElementById('progressRail');
+  rail.innerHTML = '';
+  WORDS.forEach(w=>{
+    const d = document.createElement('div');
+    d.className = 'dot ' + (mastery[w.en] === 'known' ? 'known' : mastery[w.en] === 'learning' ? 'learning' : '');
+    d.title = w.en;
+    rail.appendChild(d);
+  });
+}
+
+/* ================= TAB SWITCHING ================= */
+const panel = document.getElementById('panel');
+const tabsNav = document.getElementById('tabs');
+tabsNav.addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  [...tabsNav.children].forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render(btn.dataset.tab);
+});
+
+function render(tab){
+  if(tab === 'story') renderStory();
+  else if(tab === 'match') renderMatch();
+  else if(tab === 'quiz') renderQuiz();
+  else if(tab === 'type') renderType();
+}
+
+/* ================= STORY (AI-generated) ================= */
+let storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
+
+const STORY_SETTINGS = [
+  "a small coastal fishing town","a busy hospital ward at night","a quiet mountain village",
+  "an old university library","a rainy city office","a circus backstage",
+  "a school reunion","a long train journey","a crowded airport during a delay",
+  "a family kitchen on a Sunday morning","a countryside farm","a summer camp",
+  "a small bookshop","an art studio","a road trip gone wrong"
+];
+const STORY_CHARACTERS = [
+  "a nervous young teacher","two arguing siblings","a retired sailor",
+  "a shy new student","a tired night-shift nurse","a curious child and their grandmother",
+  "a street musician","a detective on a small case","a photographer",
+  "an exchange student","a chef opening a new restaurant","two old friends meeting again"
+];
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlightStory(text){
+  const sorted = WORDS.slice().sort((a,b)=> b.en.length - a.en.length);
+  const alternation = sorted.map(w => w.en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+  const regex = new RegExp('\\b(' + alternation + ')[a-zA-Z]*\\b', 'gi');
+  const used = new Set();
+  const escaped = escapeHtml(text);
+  const highlighted = escaped.replace(regex, (match) => {
+    const lower = match.toLowerCase();
+    const w = sorted.find(x => lower.startsWith(x.en.toLowerCase()));
+    if(!w) return match;
+    used.add(w.en);
+    return `<span class="story-word" title="${w.tr} · ${w.pos}">${match}</span>`;
+  });
+  return { html: highlighted, used: [...used] };
+}
+
+async function generateStory(){
+  storyState.loading = true;
+  storyState.error = null;
+  renderStory();
+
+  const setting = pick(STORY_SETTINGS);
+  const character = pick(STORY_CHARACTERS);
+  const wordList = WORDS.map(w=>w.en).join(', ');
+
+  const prompt = `Write a short, engaging, ORIGINAL English story at CEFR B1 level (roughly 180-260 words).
+Setting inspiration: ${setting}. Main character(s) inspiration: ${character}. Feel free to adapt these loosely.
+Naturally use as many of the following words as possible (any grammatical form: plural, past tense, -ing, adverb form, etc. are all fine): ${wordList}.
+Do not force every single word in if it breaks natural flow, but try hard to include most of them.
+Write plain prose only: no markdown, no bullet points, no asterisks, no word list, no explanation.
+First line: a short title (no more than 6 words). Then a blank line. Then the story itself, in 2-4 paragraphs.`;
+
+  // --- GEMINI API BAĞLANTISI ---
+  const apiKey = "AQ.Ab8RN6LL-L8z5YLLRxZin3RK8gyW0245hYb-ifjNGBFxiQXqrQ"; // Google AI Studio'dan aldığın anahtarı tırnak içine yaz
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  try{
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+       throw new Error(data.error?.message || 'API Hatası');
+    }
+
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if(!raw) throw new Error('empty');
+
+    const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l.length);
+    const title = lines[0];
+    const body = lines.slice(1).join('\n\n');
+
+    const { html, used } = highlightStory(body);
+    storyState = { text: html, title, loading:false, error:null, usedWords: used };
+  } catch(err){
+    storyState = { text:null, title:null, loading:false, error:'Hikaye oluşturulamadı: ' + err.message, usedWords:[] };
+  }
+  // --- GEMINI API BAĞLANTISI SONU ---
+  renderStory();
+}
+
+function renderStory(){
+  if(storyState.loading){
+    panel.innerHTML = `
+      <div class="story-empty">
+        <div class="fc-pos">HİKAYE YAZILIYOR</div>
+        <div class="fc-word" style="font-size:22px;">Kelimelerin geçtiği eşsiz bir B1 hikaye hazırlanıyor…</div>
+      </div>
+    `;
+    return;
+  }
+  if(storyState.error){
+    panel.innerHTML = `
+      <div class="story-empty">
+        <div class="fc-pos" style="color:var(--stamp-dark);">HATA</div>
+        <div class="fc-example">${storyState.error}</div>
+        <div class="fc-controls" style="margin-top:18px;">
+          <button class="btn primary" id="storyGen">Tekrar Dene</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('storyGen').onclick = generateStory;
+    return;
+  }
+  if(!storyState.text){
+    panel.innerHTML = `
+      <div class="story-empty">
+        <div class="fc-pos">HER TIKLAMADA YENİ BİR HİKAYE</div>
+        <div class="fc-word" style="font-size:24px;">Kelime listesini kullanan bir B1 hikayesi okumaya hazır mısın?</div>
+        <div class="fc-example" style="margin-top:6px;">Hikayede geçen ${WORDS.length} kelimeden biri, altı çizili olarak vurgulanır — üzerine gelince Türkçesini görürsün.</div>
+        <div class="fc-controls" style="margin-top:20px;">
+          <button class="btn primary" id="storyGen">Hikaye Oluştur</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('storyGen').onclick = generateStory;
+    return;
+  }
+  const usedCount = storyState.usedWords.length;
+  panel.innerHTML = `
+    <div class="story-meta">
+      <span>KULLANILAN KELİME: ${usedCount} / ${WORDS.length}</span>
+      <button class="btn stamp" id="storyGen">Yeni Hikaye Oluştur</button>
+    </div>
+    <div class="story-title">${storyState.title || ''}</div>
+    <div class="story-body">${storyState.text.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
+  `;
+  document.getElementById('storyGen').onclick = generateStory;
+}
+
+
+/* ================= MATCHING ================= */
+let matchState = null;
+
+function newMatchRound(){
+  const pool = shuffle(WORDS).slice(0, 8); // 8 pairs = 16 cards
+  const cards = [];
+  pool.forEach((w,i)=>{
+    cards.push({key:i, type:'en', text:w.en, en:w.en});
+    cards.push({key:i, type:'tr', text:w.tr, en:w.en});
+  });
+  matchState = {
+    cards: shuffle(cards),
+    selected: [],
+    matched: new Set(),
+    moves: 0,
+    startTime: Date.now(),
+  };
+}
+
+function renderMatch(){
+  if(!matchState) newMatchRound();
+  const allMatched = matchState.matched.size === matchState.cards.length;
+  if(allMatched){
+    const seconds = Math.round((Date.now()-matchState.startTime)/1000);
+    panel.innerHTML = `
+      <div class="match-done">
+        <div class="fc-pos">TAMAMLANDI</div>
+        <div class="fc-word">Tüm çiftler eşleşti 🎉</div>
+        <div class="fc-example">${matchState.moves} hamlede, ${seconds} saniyede.</div>
+        <div class="fc-controls" style="margin-top:20px;">
+          <button class="btn primary" id="matchAgain">Yeni Tur</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('matchAgain').onclick = ()=>{ matchState = null; renderMatch(); };
+    return;
+  }
+  panel.innerHTML = `
+    <div class="match-meta">
+      <span>HAMLE: ${matchState.moves}</span>
+      <span>EŞLEŞEN: ${matchState.matched.size/2} / ${matchState.cards.length/2}</span>
+    </div>
+    <div class="match-grid" id="matchGrid"></div>
+    <div class="fc-controls" style="margin-top:18px;">
+      <button class="btn" id="matchReset">Yeni Kartlarla Başla</button>
+    </div>
+  `;
+  const grid = document.getElementById('matchGrid');
+  matchState.cards.forEach((c, idx)=>{
+    const el = document.createElement('div');
+    const isMatched = matchState.matched.has(idx);
+    const isSelected = matchState.selected.includes(idx);
+    el.className = 'm-card ' + (c.type==='tr'?'tr ':'') + (isMatched?'matched':'') + (isSelected?'selected':'');
+    el.textContent = c.text;
+    el.dataset.idx = idx;
+    if(!isMatched){
+      el.onclick = ()=> handleMatchClick(idx);
+    }
+    grid.appendChild(el);
+  });
+  document.getElementById('matchReset').onclick = ()=>{ matchState = null; renderMatch(); };
+}
+
+function handleMatchClick(idx){
+  if(matchState.selected.includes(idx)) return;
+  if(matchState.selected.length === 2) return;
+  matchState.selected.push(idx);
+  if(matchState.selected.length === 2){
+    matchState.moves++;
+    const [a,b] = matchState.selected;
+    const cardA = matchState.cards[a], cardB = matchState.cards[b];
+    if(cardA.key === cardB.key && cardA.type !== cardB.type){
+      matchState.matched.add(a);
+      matchState.matched.add(b);
+      bumpMastery(cardA.en, true);
+      matchState.selected = [];
+      renderMatch();
+    } else {
+      renderMatch();
+      setTimeout(()=>{ matchState.selected = []; renderMatch(); }, 550);
+    }
+  } else {
+    renderMatch();
+  }
+}
+
+/* ================= QUIZ ================= */
+let quizState = null;
+
+function newQuiz(){
+  const order = shuffle(WORDS);
+  quizState = { order, index:0, correct:0, answered:false };
+}
+
+function renderQuiz(){
+  if(!quizState) newQuiz();
+  if(quizState.index >= quizState.order.length){
+    panel.innerHTML = `
+      <div class="quiz-end">
+        <div class="fc-pos">SONUÇ</div>
+        <div class="quiz-score">${quizState.correct} / ${quizState.order.length}</div>
+        <div class="fc-example">${quizState.correct === quizState.order.length ? 'Mükemmel! Hepsini bildin.' : 'İyi iş — zayıf kaldığın kelimeleri kartlarla tekrar et.'}</div>
+        <div class="fc-controls" style="margin-top:20px;">
+          <button class="btn primary" id="quizAgain">Tekrar Dene</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('quizAgain').onclick = ()=>{ quizState = null; renderQuiz(); };
+    return;
+  }
+  const w = quizState.order[quizState.index];
+  const wrongPool = shuffle(WORDS.filter(x=>x.en!==w.en)).slice(0,3).map(x=>x.tr);
+  const options = shuffle([w.tr, ...wrongPool]);
+
+  panel.innerHTML = `
+    <div class="quiz-meta">
+      <span>SORU ${quizState.index+1} / ${quizState.order.length}</span>
+      <span>DOĞRU: ${quizState.correct}</span>
+    </div>
+    <div class="quiz-prompt">
+      <div class="quiz-word">${w.en}</div>
+      <div class="quiz-instruction">bu kelimenin anlamı nedir?</div>
+    </div>
+    <div class="quiz-options" id="quizOptions"></div>
+    <div class="quiz-feedback" id="quizFeedback"></div>
+  `;
+  const optsEl = document.getElementById('quizOptions');
+  options.forEach(opt=>{
+    const b = document.createElement('button');
+    b.className = 'q-opt';
+    b.textContent = opt;
+    b.onclick = ()=> handleQuizAnswer(opt, w, optsEl);
+    optsEl.appendChild(b);
+  });
+}
+
+function handleQuizAnswer(opt, w, optsEl){
+  if(quizState.answered) return;
+  quizState.answered = true;
+  const buttons = [...optsEl.children];
+  buttons.forEach(b=>{
+    b.disabled = true;
+    if(b.textContent === w.tr) b.classList.add('correct');
+    else if(b.textContent === opt) b.classList.add('incorrect');
+  });
+  const success = opt === w.tr;
+  if(success) quizState.correct++;
+  bumpMastery(w.en, success);
+  document.getElementById('quizFeedback').textContent = success
+    ? 'Doğru! ' + w.ex.replace('___', w.en)
+    : 'Doğrusu: ' + w.tr + '  ·  ' + w.ex.replace('___', w.en);
+
+  setTimeout(()=>{
+    quizState.index++;
+    quizState.answered = false;
+    renderQuiz();
+  }, 1600);
+}
+
+/* ================= TYPING ================= */
+let typeState = null;
+
+function newTypeRound(){
+  const order = shuffle(WORDS);
+  typeState = { order, index:0, correct:0, checked:false, wrong:[] };
+}
+
+function renderType(){
+  if(!typeState) newTypeRound();
+  if(typeState.index >= typeState.order.length){
+    const wrongList = typeState.wrong.map(w => `
+      <div class="review-row">
+        <div class="review-en">${w.en}</div>
+        <div class="review-mid">
+          <div class="review-tr">${w.tr}</div>
+          <div class="review-ex">${w.ex.replace('___', w.en)}</div>
+        </div>
+        <div class="review-given">${w.given ? 'yazdığın: “' + w.given + '”' : 'boş bırakıldı'}</div>
+      </div>
+    `).join('');
+    panel.innerHTML = `
+      <div class="quiz-end">
+        <div class="fc-pos">SONUÇ</div>
+        <div class="quiz-score">${typeState.correct} / ${typeState.order.length}</div>
+        <div class="fc-example">Yazarak hatırlamak en kalıcı yöntemdir.</div>
+        <div class="fc-controls" style="margin-top:20px;">
+          <button class="btn primary" id="typeAgain">Tekrar Dene</button>
+        </div>
+      </div>
+      ${typeState.wrong.length ? `
+        <div class="review-section">
+          <div class="review-title">Yanlış / Eksik Yazılanlar (${typeState.wrong.length})</div>
+          ${wrongList}
+        </div>
+      ` : `<div class="review-section"><div class="review-title" style="color:var(--sage);">Hepsini doğru yazdın 🎉</div></div>`}
+    `;
+    document.getElementById('typeAgain').onclick = ()=>{ typeState = null; renderType(); };
+    return;
+  }
+  const w = typeState.order[typeState.index];
+  panel.innerHTML = `
+    <div class="type-meta">
+      <span>SORU ${typeState.index+1} / ${typeState.order.length}</span>
+      <span>DOĞRU: ${typeState.correct}</span>
+    </div>
+    <div class="type-prompt">
+      <div class="type-tr">${w.tr}</div>
+      <div class="type-example">${w.ex.split('___')[0]}<span class="type-blank">______</span>${w.ex.split('___')[1]}</div>
+    </div>
+    <div class="type-row">
+      <input class="type-input mono" id="typeInput" placeholder="İngilizcesini yaz" autocomplete="off" spellcheck="false">
+      <button class="btn primary" id="typeCheck">Kontrol Et</button>
+    </div>
+    <div class="type-feedback" id="typeFeedback"></div>
+  `;
+  const input = document.getElementById('typeInput');
+  input.focus();
+  const check = ()=>{
+    if(typeState.checked) return;
+    typeState.checked = true;
+    const val = input.value.trim().toLowerCase();
+    const success = val === w.en.toLowerCase();
+    input.classList.add(success ? 'correct' : 'incorrect');
+    input.disabled = true;
+    if(success) typeState.correct++;
+    else typeState.wrong.push({...w, given: val});
+    bumpMastery(w.en, success);
+    document.getElementById('typeFeedback').textContent = success
+      ? 'Doğru!'
+      : `Doğrusu: "${w.en}"`;
+    setTimeout(()=>{
+      typeState.index++;
+      typeState.checked = false;
+      renderType();
+    }, 1400);
+  };
+  document.getElementById('typeCheck').onclick = check;
+  input.addEventListener('keydown', e=>{ if(e.key === 'Enter') check(); });
+}
+
+/* init */
+selectNewSet();
+// --- PWA MOTORUNU AKTİF ETME ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Uygulama Motoru Hazır!'))
+      .catch(err => console.log('Motor Hatası:', err));
+  });
+}
+</script>
+</body>
+</html>
