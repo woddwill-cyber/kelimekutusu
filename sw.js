@@ -1,6 +1,6 @@
 const CACHE_NAME = 'kelime-kutusu-v1';
 const ASSETS = [
-  'Diluygulaması.html',
+  'index.html',
   'manifest.json',
   'icon.png'
 ];
