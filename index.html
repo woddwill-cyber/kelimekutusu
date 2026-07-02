@@ -4,179 +4,71 @@
 <meta charset="UTF-8">
 <title>Kelime Kutusu</title>
 <link rel="manifest" href="manifest.json">
-<div style="margin: 15px 0;">
-      <button class="btn stamp" onclick="selectNewSet()" style="font-size: 13px; padding: 10px 20px;">🎲 Rastgele 30 Kelime Seç</button>
-    </div>
+<!-- Firebase Kütüphaneleri -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#F6EFDE;
-    --paper-dark:#EAE0C7;
-    --card:#FBF6EA;
-    --ink:#2B3A4A;
-    --ink-soft:#5B6B7A;
-    --kraft:#8B6F47;
-    --kraft-light:#D8C6A3;
-    --stamp:#C1502E;
-    --stamp-dark:#9C3D22;
-    --sage:#5E7A4F;
-    --sage-light:#E1E9D6;
+    --paper:#F6EFDE; --paper-dark:#EAE0C7; --card:#FBF6EA;
+    --ink:#2B3A4A; --ink-soft:#5B6B7A; --kraft:#8B6F47;
+    --kraft-light:#D8C6A3; --stamp:#C1502E; --stamp-dark:#9C3D22;
+    --sage:#5E7A4F; --sage-light:#E1E9D6;
     --line: rgba(43,58,74,0.16);
     --shadow: 0 6px 16px rgba(43,58,74,0.12), 0 1px 3px rgba(43,58,74,0.08);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:
-      radial-gradient(circle at 1px 1px, rgba(43,58,74,0.05) 1px, transparent 0) 0 0/22px 22px,
-      var(--paper);
-    color:var(--ink);
-    font-family:'Fraunces', Georgia, serif;
-    min-height:100vh;
-    padding:28px 16px 60px;
+    background: radial-gradient(circle at 1px 1px, rgba(43,58,74,0.05) 1px, transparent 0) 0 0/22px 22px, var(--paper);
+    color:var(--ink); font-family:'Fraunces', Georgia, serif;
+    min-height:100vh; padding:28px 16px 60px;
   }
   .mono{ font-family:'Space Mono', monospace; letter-spacing:0.02em; }
   .wrap{ max-width:760px; margin:0 auto; }
 
-  /* Header */
   header{ text-align:center; margin-bottom:22px; }
-  .eyebrow{
-    font-family:'Space Mono', monospace;
-    font-size:11px;
-    letter-spacing:0.18em;
-    text-transform:uppercase;
-    color:var(--kraft);
-    margin-bottom:6px;
-  }
-  h1{
-    font-size:clamp(30px, 6vw, 42px);
-    font-weight:700;
-    margin:0 0 6px;
-    font-style:italic;
-  }
-  .sub{
-    color:var(--ink-soft);
-    font-size:15px;
-    margin-bottom:18px;
-  }
+  .eyebrow{ font-family:'Space Mono', monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--kraft); margin-bottom:6px; }
+  h1{ font-size:clamp(30px, 6vw, 42px); font-weight:700; margin:0 0 6px; font-style:italic; }
+  .sub{ color:var(--ink-soft); font-size:15px; margin-bottom:18px; }
 
-  /* Progress rail: 15 index-card dots */
-  .progress-rail{
-    display:flex; justify-content:center; gap:4px; flex-wrap:wrap;
-    margin:0 auto 26px; max-width:620px;
-  }
-  .dot{
-    width:13px;height:17px;
-    background:var(--card);
-    border:1px solid var(--kraft-light);
-    border-radius:2px;
-    position:relative;
-    transition:all .25s ease;
-  }
-  .dot::before{
-    content:'';
-    position:absolute; top:3px; left:2px; right:2px; height:1px;
-    background:var(--line);
-    box-shadow:0 3px 0 var(--line);
-  }
+  .progress-rail{ display:flex; justify-content:center; gap:4px; flex-wrap:wrap; margin:0 auto 26px; max-width:620px; }
+  .dot{ width:13px;height:17px; background:var(--card); border:1px solid var(--kraft-light); border-radius:2px; position:relative; transition:all .25s ease; }
+  .dot::before{ content:''; position:absolute; top:3px; left:2px; right:2px; height:1px; background:var(--line); box-shadow:0 3px 0 var(--line); }
   .dot.learning{ background:var(--kraft-light); border-color:var(--kraft); }
   .dot.known{ background:var(--sage); border-color:var(--sage); }
   .dot.known::before{ display:none; }
 
-  /* Tabs styled like card-catalog drawer labels */
-  nav.tabs{
-    display:flex; gap:6px; justify-content:center; flex-wrap:wrap;
-    margin-bottom:22px;
-  }
-  nav.tabs button{
-    font-family:'Space Mono', monospace;
-    font-size:12px;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    background:var(--paper-dark);
-    border:1.5px solid var(--kraft-light);
-    border-bottom:none;
-    color:var(--ink-soft);
-    padding:10px 16px 8px;
-    cursor:pointer;
-    border-radius:6px 6px 0 0;
-    position:relative;
-    top:1px;
-  }
-  nav.tabs button.active{
-    background:var(--card);
-    color:var(--stamp-dark);
-    border-color:var(--kraft);
-    box-shadow: 0 -3px 8px rgba(43,58,74,0.06);
-  }
+  nav.tabs{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:22px; }
+  nav.tabs button{ font-family:'Space Mono', monospace; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-bottom:none; color:var(--ink-soft); padding:10px 16px 8px; cursor:pointer; border-radius:6px 6px 0 0; position:relative; top:1px; }
+  nav.tabs button.active{ background:var(--card); color:var(--stamp-dark); border-color:var(--kraft); box-shadow: 0 -3px 8px rgba(43,58,74,0.06); }
 
-  .panel{
-    background:var(--card);
-    border:1.5px solid var(--kraft);
-    border-radius:0 8px 8px 8px;
-    padding:28px 24px;
-    box-shadow:var(--shadow);
-    min-height:380px;
-  }
-
-  .fc-pos{ font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;}
+  .panel{ background:var(--card); border:1.5px solid var(--kraft); border-radius:0 8px 8px 8px; padding:28px 24px; box-shadow:var(--shadow); min-height:380px; }
+  .fc-pos{ font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; text-align:center;}
   .fc-word{ font-size:34px; font-weight:700; margin-bottom:6px; text-align:center; }
   .fc-example{ font-size:14px; color:var(--ink-soft); text-align:center; line-height:1.5; max-width:340px; margin:0 auto; }
   .fc-controls{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
-  /* ---- Story ---- */
   .story-empty{ text-align:center; padding:36px 10px; max-width:460px; margin:0 auto; }
   .story-meta{ display:flex; justify-content:space-between; align-items:center; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:18px; flex-wrap:wrap; gap:10px; }
   .story-title{ font-size:26px; font-weight:700; font-style:italic; margin-bottom:16px; color:var(--stamp-dark); }
   .story-body{ font-size:16px; line-height:1.75; color:var(--ink); }
   .story-body p{ margin:0 0 16px; }
-  .story-word{
-    background:var(--sage-light);
-    border-bottom:1.5px dotted var(--sage);
-    padding:0 2px;
-    border-radius:2px;
-    cursor:help;
-    font-weight:600;
-    color:var(--sage);
-  }
-  button.btn{
-    font-family:'Space Mono',monospace;
-    font-size:12px;
-    letter-spacing:0.04em;
-    padding:10px 18px;
-    border-radius:5px;
-    border:1.5px solid var(--kraft);
-    background:var(--paper-dark);
-    color:var(--ink);
-    cursor:pointer;
-    transition:transform .12s ease, background .15s ease;
-  }
+  .story-word{ background:var(--sage-light); border-bottom:1.5px dotted var(--sage); padding:0 2px; border-radius:2px; font-weight:600; color:var(--sage); }
+  
+  button.btn{ font-family:'Space Mono',monospace; font-size:12px; letter-spacing:0.04em; padding:10px 18px; border-radius:5px; border:1.5px solid var(--kraft); background:var(--paper-dark); color:var(--ink); cursor:pointer; transition:transform .12s ease; }
   button.btn:hover{ transform:translateY(-1px); }
   button.btn.primary{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
   button.btn.stamp{ background:var(--stamp); color:#fff; border-color:var(--stamp-dark); }
-  button.btn.sage{ background:var(--sage); color:#fff; border-color:#46603a; }
   button.btn:disabled{ opacity:.4; cursor:default; }
 
-  /* ---- Matching ---- */
   .match-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
-  .match-grid{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
-  }
+  .match-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   @media (max-width:480px){ .match-grid{ grid-template-columns:repeat(3,1fr);} }
-  .m-card{
-    aspect-ratio:1/1.05;
-    background:var(--paper-dark);
-    border:1.5px solid var(--kraft-light);
-    border-radius:6px;
-    display:flex; align-items:center; justify-content:center;
-    text-align:center; padding:6px;
-    font-size:13px; font-weight:600;
-    cursor:pointer;
-    user-select:none;
-    transition:all .2s ease;
-  }
+  .m-card{ aspect-ratio:1/1.05; background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:6px; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px; font-size:13px; font-weight:600; cursor:pointer; user-select:none; transition:all .2s ease; }
   .m-card.tr{ font-style:italic; font-weight:500; color:var(--sage); }
   .m-card.selected{ border-color:var(--stamp); background:#fff2ea; }
   .m-card.matched{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); opacity:.55; cursor:default; }
@@ -184,24 +76,12 @@
   @keyframes shake{ 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
   .match-done{ text-align:center; padding:30px 10px; }
 
-  /* ---- Quiz ---- */
   .quiz-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:18px; }
   .quiz-prompt{ text-align:center; margin-bottom:22px; }
   .quiz-word{ font-size:32px; font-weight:700; margin-bottom:4px; }
   .quiz-instruction{ font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--kraft); }
   .quiz-options{ display:grid; gap:10px; }
-  .q-opt{
-    text-align:left;
-    padding:14px 16px;
-    border-radius:6px;
-    border:1.5px solid var(--kraft-light);
-    background:var(--paper-dark);
-    font-family:'Fraunces', serif;
-    font-size:17px;
-    cursor:pointer;
-    font-style:italic;
-  }
-  .q-opt:hover{ border-color:var(--kraft); }
+  .q-opt{ text-align:left; padding:14px 16px; border-radius:6px; border:1.5px solid var(--kraft-light); background:var(--paper-dark); font-family:'Fraunces', serif; font-size:17px; cursor:pointer; font-style:italic; }
   .q-opt.correct{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); font-weight:600; }
   .q-opt.incorrect{ background:#FBE4DC; border-color:var(--stamp); color:var(--stamp-dark); }
   .q-opt:disabled{ cursor:default; }
@@ -209,23 +89,12 @@
   .quiz-end{ text-align:center; padding:20px 10px; }
   .quiz-score{ font-size:46px; font-weight:700; color:var(--stamp); margin:10px 0;}
 
-  /* ---- Typing ---- */
   .type-prompt{ text-align:center; margin-bottom:18px; }
   .type-tr{ font-size:26px; font-style:italic; color:var(--sage); margin-bottom:8px; }
   .type-example{ font-size:14px; color:var(--ink-soft); margin-bottom:4px; }
   .type-blank{ font-family:'Space Mono',monospace; font-weight:700; color:var(--stamp); }
   .type-row{ display:flex; gap:8px; justify-content:center; margin:18px 0 8px; flex-wrap:wrap; }
-  input.type-input{
-    font-family:'Space Mono',monospace;
-    font-size:16px;
-    padding:12px 14px;
-    border-radius:6px;
-    border:1.5px solid var(--kraft);
-    background:var(--paper);
-    color:var(--ink);
-    width:220px;
-    text-align:center;
-  }
+  input.type-input{ font-family:'Space Mono',monospace; font-size:16px; padding:12px 14px; border-radius:6px; border:1.5px solid var(--kraft); background:var(--paper); color:var(--ink); width:220px; text-align:center; }
   input.type-input:focus{ outline:none; border-color:var(--stamp); }
   input.type-input.correct{ border-color:var(--sage); background:var(--sage-light); }
   input.type-input.incorrect{ border-color:var(--stamp); background:#FBE4DC; }
@@ -233,32 +102,13 @@
   .type-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:16px; }
 
   .review-section{ margin-top:26px; border-top:1.5px dashed var(--kraft-light); padding-top:18px; }
-  .review-title{
-    font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase;
-    letter-spacing:0.08em; color:var(--stamp-dark); text-align:center; margin-bottom:14px;
-  }
-  .review-row{
-    display:grid; grid-template-columns:110px 1fr; gap:4px 14px;
-    align-items:start;
-    background:#FBE4DC;
-    border:1px solid var(--stamp);
-    border-radius:6px;
-    padding:10px 12px;
-    margin-bottom:8px;
-  }
-  .review-en{ font-weight:700; font-size:16px; color:var(--stamp-dark); align-self:center; }
-  .review-mid{ min-width:0; }
+  .review-title{ font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--stamp-dark); text-align:center; margin-bottom:14px; }
+  .review-row{ display:grid; grid-template-columns:110px 1fr 80px 80px; gap:4px 14px; align-items:center; background:#FBE4DC; border:1px solid var(--stamp); border-radius:6px; padding:10px 12px; margin-bottom:8px; }
+  .review-en{ font-weight:700; font-size:16px; color:var(--stamp-dark); }
   .review-tr{ font-style:italic; color:var(--ink); font-size:14px; }
-  .review-ex{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
-  .review-given{
-    grid-column:1 / -1;
-    font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft);
-    padding-top:4px; border-top:1px dashed rgba(43,58,74,0.15); margin-top:2px;
-  }
-  @media (max-width:480px){
-    .review-row{ grid-template-columns:1fr; }
-    .review-en{ align-self:auto; }
-  }
+  .stat-wrong{ font-family:'Space Mono'; font-size:12px; color:var(--stamp-dark); font-weight:bold; }
+  .stat-correct{ font-family:'Space Mono'; font-size:12px; color:var(--sage); font-weight:bold; }
+  @media (max-width:480px){ .review-row{ grid-template-columns:1fr; text-align:center;} }
 
   footer{ text-align:center; margin-top:22px; font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft-light); }
 </style>
@@ -269,6 +119,12 @@
     <div class="eyebrow" id="eyebrowLabel">kart · sözcük çekmecesi</div>
     <h1>Kelime Kutusu</h1>
     <div class="sub" id="subLabel">Kartları çevir, eşleştir, sına — kelimeleri kalıcı hafızaya yerleştir.</div>
+    
+     <div style="margin: 15px 0;">
+      <button class="btn stamp" onclick="selectNewSet()" style="font-size: 13px; padding: 10px 20px;">🎲 Rastgele 30 Kelime Seç</button>
+      <button class="btn primary" onclick="selectAllWords()" style="font-size: 13px; padding: 10px 20px; margin-left: 8px;">🌟 Tüm Kelimeleri Seç</button>
+    </div>
+
     <div class="progress-rail" id="progressRail"></div>
   </header>
 
@@ -277,13 +133,48 @@
     <button data-tab="match">Eşleştirme</button>
     <button data-tab="quiz">Çoktan Seçmeli</button>
     <button data-tab="type">Yazma</button>
+    <button data-tab="focusedType" style="color: var(--sage); border-bottom-color: var(--sage);">Odaklı Yazma</button>
+    <button data-tab="hard">Zorlu Kelimeler</button>
   </nav>
 
   <div class="panel" id="panel"></div>
-  <footer>ilerlemen bu oturumda hafızada tutulur · sayfayı yenilersen sıfırlanır</footer>
+  <footer>ilerlemen bulutta tutulur · istediğin cihazdan pratik yap</footer>
 </div>
 
 <script>
+// --- FIREBASE KURULUMU ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDLmlevieYyaJplcGaDZc-BGDgxYbIRXqM",
+  authDomain: "kelime-kutusu-a9d8e.firebaseapp.com",
+  projectId: "kelime-kutusu-a9d8e",
+  storageBucket: "kelime-kutusu-a9d8e.firebasestorage.app",
+  messagingSenderId: "400184263845",
+  appId: "1:400184263845:web:5d62c14e6eeb53b8eb394c",
+  measurementId: "G-2EW9CGE3WZ"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// SABİT ORTAK DEPO (Şifresiz, tek sana özel)
+const userCode = "yusuf_ortak_depo"; 
+
+// Buluta Veri Yazma Fonksiyonu
+function updateCloudStats(en, success) {
+  const docRef = db.collection('userStats').doc(userCode).collection('words').doc(en);
+  
+  db.runTransaction(transaction => {
+    return transaction.get(docRef).then(doc => {
+      let dogru = 0, yanlis = 0;
+      if (doc.exists) {
+        dogru = doc.data().dogru || 0;
+        yanlis = doc.data().yanlis || 0;
+      }
+      if (success) dogru++; else yanlis++;
+      transaction.set(docRef, { en: en, dogru: dogru, yanlis: yanlis }, {merge: true});
+    });
+  }).catch(err => console.log("Bulut kaydı hatası:", err));
+}
+
 // --- SENİN DEV KELİME HAVUZUN BURASI ---
 const ALL_WORDS = [
   // Zamanla yeni kelimelerini bu formata uygun olarak alt alta ekleyeceksin.
@@ -347,11 +238,10 @@ const ALL_WORDS = [
   {en:"privilege", pos:"isim", tr:"ayrıcalık", ex:"Education should not be a ___ for the few."},
   {en:"subsequent", pos:"sıfat", tr:"sonraki, müteakip", ex:"___ tests confirmed the diagnosis."},
   {en:"upholstery", pos:"isim", tr:"döşeme (mobilya)", ex:"The car's ___ was made of soft leather."},
-  // ŞİMDİLİK TEST İÇİN KISA BİR LİSTE BIRAKTIM, BURAYI ZAMANLA DOLDURACAKSIN :)
 ];
 
-let WORDS = []; // Aktif olarak ekranda görünen 30 kelimelik setimiz
-const LIMIT = 30; // Her sette kaç kelime olacağını buradan değiştirebilirsin
+let WORDS = [];
+const LIMIT = 30;
 let mastery = {};
 
 function shuffle(arr){
@@ -363,27 +253,20 @@ function shuffle(arr){
   return a;
 }
 
-// Yeni kelime setini seçen asıl fonksiyonumuz
 function selectNewSet() {
-  // Havuzu karıştırıp limit kadar (örn: 30) kelime seçiyoruz
   const karisik = shuffle([...ALL_WORDS]);
   WORDS = karisik.slice(0, Math.min(LIMIT, ALL_WORDS.length));
-
-  // Arayüz yazılarını yeni kelime sayısına göre güncelliyoruz
   document.getElementById('eyebrowLabel').textContent = WORDS.length + ' kart · sözcük çekmecesi';
   document.getElementById('subLabel').textContent = 'Kartları çevir, eşleştir, sına — ' + WORDS.length + ' kelimeyi kalıcı hafızaya yerleştir.';
 
-  // Öğrenme durumunu (ilerleme çubuğunu) tamamen sıfırlıyoruz
   mastery = {};
   WORDS.forEach(w => mastery[w.en] = 'new');
 
-  // Geçmiş oyunların/hikayelerin hafızasını temizliyoruz ki eski kelimeler takılı kalmasın
   storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
   matchState = null;
   quizState = null;
   typeState = null;
 
-  // Ekranı yeni kelimelerle çiziyoruz
   renderProgress();
   const aktifTab = document.querySelector('nav.tabs button.active');
   if(aktifTab) render(aktifTab.dataset.tab);
@@ -396,10 +279,7 @@ function bumpMastery(en, success){
   } else {
     if(cur !== 'known') mastery[en] = 'learning';
   }
-  renderProgress();
-}
-function setKnown(en, known){
-  mastery[en] = known ? 'known' : 'learning';
+  updateCloudStats(en, success); // BULUTA YAZ
   renderProgress();
 }
 
@@ -414,7 +294,6 @@ function renderProgress(){
   });
 }
 
-/* ================= TAB SWITCHING ================= */
 const panel = document.getElementById('panel');
 const tabsNav = document.getElementById('tabs');
 tabsNav.addEventListener('click', e=>{
@@ -430,30 +309,58 @@ function render(tab){
   else if(tab === 'match') renderMatch();
   else if(tab === 'quiz') renderQuiz();
   else if(tab === 'type') renderType();
+  else if(tab === 'hard') renderHardWords(); // YENİ BULUT SEKME
+  else if(tab === 'focusedType') renderFocusedType();
 }
 
-/* ================= STORY (AI-generated) ================= */
+// --- YENİ ZORLU KELİMELER SEKME MANTIĞI ---
+async function renderHardWords() {
+  panel.innerHTML = `
+    <div class="fc-pos">BULUTTAN VERİLER ÇEKİLİYOR...</div>
+    <div style="text-align:center; padding:20px; font-size:24px;">⏳</div>
+  `;
+  try {
+    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
+    let stats = [];
+    snapshot.forEach(doc => {
+      let data = doc.data();
+      let wordObj = ALL_WORDS.find(w => w.en === data.en);
+      if(wordObj && data.yanlis > 0) {
+        stats.push({ ...wordObj, dogru: data.dogru, yanlis: data.yanlis });
+      }
+    });
+    
+    stats.sort((a,b) => b.yanlis - a.yanlis); // En çok yanlış yapılanlar en üste
+    
+    let html = `<div class="fc-pos">EN ÇOK ZORLANDIĞIN KELİMELER (BULUT KAYDI)</div>`;
+    if(stats.length === 0) {
+      html += `<div class="fc-example" style="margin-top:20px;">Henüz hiç yanlış yapmadın! Eşleştirme veya Quiz oynayarak hafızayı doldur. 🎉</div>`;
+    } else {
+      stats.forEach(s => {
+        html += `
+          <div class="review-row" style="background:#fff; border-color:var(--kraft-light)">
+            <div class="review-en">${s.en}</div>
+            <div class="review-tr">${s.tr}</div>
+            <div class="stat-wrong">Yanlış: ${s.yanlis}</div>
+            <div class="stat-correct">Doğru: ${s.dogru}</div>
+          </div>
+        `;
+      });
+    }
+    panel.innerHTML = html;
+  } catch (error) {
+    panel.innerHTML = `<div class="fc-pos" style="color:var(--stamp-dark)">HATA OLUŞTU</div><div class="fc-example">Veriler çekilemedi. İnternet bağlantını kontrol et.</div>`;
+  }
+}
+
+// ================= STORY =================
 let storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
 
-const STORY_SETTINGS = [
-  "a small coastal fishing town","a busy hospital ward at night","a quiet mountain village",
-  "an old university library","a rainy city office","a circus backstage",
-  "a school reunion","a long train journey","a crowded airport during a delay",
-  "a family kitchen on a Sunday morning","a countryside farm","a summer camp",
-  "a small bookshop","an art studio","a road trip gone wrong"
-];
-const STORY_CHARACTERS = [
-  "a nervous young teacher","two arguing siblings","a retired sailor",
-  "a shy new student","a tired night-shift nurse","a curious child and their grandmother",
-  "a street musician","a detective on a small case","a photographer",
-  "an exchange student","a chef opening a new restaurant","two old friends meeting again"
-];
+const STORY_SETTINGS = [ "a small coastal fishing town","a busy hospital ward at night","a quiet mountain village","an old university library","a rainy city office" ];
+const STORY_CHARACTERS = [ "a nervous young teacher","two arguing siblings","a retired sailor","a shy new student","a tired night-shift nurse" ];
 
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-function escapeHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function highlightStory(text){
   const sorted = WORDS.slice().sort((a,b)=> b.en.length - a.en.length);
@@ -487,24 +394,13 @@ Do not force every single word in if it breaks natural flow, but try hard to inc
 Write plain prose only: no markdown, no bullet points, no asterisks, no word list, no explanation.
 First line: a short title (no more than 6 words). Then a blank line. Then the story itself, in 2-4 paragraphs.`;
 
-  // --- GEMINI API BAĞLANTISI ---
-  const apiKey = "AQ.Ab8RN6LL-L8z5YLLRxZin3RK8gyW0245hYb-ifjNGBFxiQXqrQ"; // Lütfen güvenlik için yeni oluşturduğunuz anahtarı girin
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const geminiApiKey = "BURAYA_YENI_GEMINI_ANAHTARINI_YAZIN"; // Google AI Studio'dan aldığın anahtarı buraya gir!
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
 
   try{
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    });
-    
+    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
     const data = await response.json();
-    
-    if (!response.ok) {
-       throw new Error(data.error?.message || 'API Hatası');
-    }
+    if (!response.ok) throw new Error(data.error?.message || 'API Hatası');
 
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     if(!raw) throw new Error('empty');
@@ -518,77 +414,41 @@ First line: a short title (no more than 6 words). Then a blank line. Then the st
   } catch(err){
     storyState = { text:null, title:null, loading:false, error:'Hikaye oluşturulamadı: ' + err.message, usedWords:[] };
   }
-  // --- GEMINI API BAĞLANTISI SONU ---
   renderStory();
 }
 
 function renderStory(){
   if(storyState.loading){
-    panel.innerHTML = `
-      <div class="story-empty">
-        <div class="fc-pos">HİKAYE YAZILIYOR</div>
-        <div class="fc-word" style="font-size:22px;">Kelimelerin geçtiği eşsiz bir B1 hikaye hazırlanıyor…</div>
-      </div>
-    `;
+    panel.innerHTML = `<div class="story-empty"><div class="fc-pos">HİKAYE YAZILIYOR</div><div class="fc-word" style="font-size:22px;">Kelimelerin geçtiği eşsiz bir B1 hikaye hazırlanıyor…</div></div>`;
     return;
   }
   if(storyState.error){
-    panel.innerHTML = `
-      <div class="story-empty">
-        <div class="fc-pos" style="color:var(--stamp-dark);">HATA</div>
-        <div class="fc-example">${storyState.error}</div>
-        <div class="fc-controls" style="margin-top:18px;">
-          <button class="btn primary" id="storyGen">Tekrar Dene</button>
-        </div>
-      </div>
-    `;
+    panel.innerHTML = `<div class="story-empty"><div class="fc-pos" style="color:var(--stamp-dark);">HATA</div><div class="fc-example">${storyState.error}</div><div class="fc-controls" style="margin-top:18px;"><button class="btn primary" id="storyGen">Tekrar Dene</button></div></div>`;
     document.getElementById('storyGen').onclick = generateStory;
     return;
   }
   if(!storyState.text){
-    panel.innerHTML = `
-      <div class="story-empty">
-        <div class="fc-pos">HER TIKLAMADA YENİ BİR HİKAYE</div>
-        <div class="fc-word" style="font-size:24px;">Kelime listesini kullanan bir B1 hikayesi okumaya hazır mısın?</div>
-        <div class="fc-example" style="margin-top:6px;">Hikayede geçen ${WORDS.length} kelimeden biri, altı çizili olarak vurgulanır — üzerine gelince Türkçesini görürsün.</div>
-        <div class="fc-controls" style="margin-top:20px;">
-          <button class="btn primary" id="storyGen">Hikaye Oluştur</button>
-        </div>
-      </div>
-    `;
+    panel.innerHTML = `<div class="story-empty"><div class="fc-pos">HER TIKLAMADA YENİ BİR HİKAYE</div><div class="fc-word" style="font-size:24px;">Kelime listesini kullanan bir B1 hikayesi okumaya hazır mısın?</div><div class="fc-example" style="margin-top:6px;">Hikayede geçen ${WORDS.length} kelimeden biri, altı çizili olarak vurgulanır — üzerine gelince Türkçesini görürsün.</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="storyGen">Hikaye Oluştur</button></div></div>`;
     document.getElementById('storyGen').onclick = generateStory;
     return;
   }
   const usedCount = storyState.usedWords.length;
   panel.innerHTML = `
-    <div class="story-meta">
-      <span>KULLANILAN KELİME: ${usedCount} / ${WORDS.length}</span>
-      <button class="btn stamp" id="storyGen">Yeni Hikaye Oluştur</button>
-    </div>
+    <div class="story-meta"><span>KULLANILAN KELİME: ${usedCount} / ${WORDS.length}</span><button class="btn stamp" id="storyGen">Yeni Hikaye Oluştur</button></div>
     <div class="story-title">${storyState.title || ''}</div>
     <div class="story-body">${storyState.text.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
   `;
   document.getElementById('storyGen').onclick = generateStory;
 }
 
-
-/* ================= MATCHING ================= */
+// ================= MATCHING =================
 let matchState = null;
 
 function newMatchRound(){
-  const pool = shuffle(WORDS).slice(0, 8); // 8 pairs = 16 cards
+  const pool = shuffle(WORDS).slice(0, 8);
   const cards = [];
-  pool.forEach((w,i)=>{
-    cards.push({key:i, type:'en', text:w.en, en:w.en});
-    cards.push({key:i, type:'tr', text:w.tr, en:w.en});
-  });
-  matchState = {
-    cards: shuffle(cards),
-    selected: [],
-    matched: new Set(),
-    moves: 0,
-    startTime: Date.now(),
-  };
+  pool.forEach((w,i)=>{ cards.push({key:i, type:'en', text:w.en, en:w.en}); cards.push({key:i, type:'tr', text:w.tr, en:w.en}); });
+  matchState = { cards: shuffle(cards), selected: [], matched: new Set(), moves: 0, startTime: Date.now() };
 }
 
 function renderMatch(){
@@ -596,28 +456,14 @@ function renderMatch(){
   const allMatched = matchState.matched.size === matchState.cards.length;
   if(allMatched){
     const seconds = Math.round((Date.now()-matchState.startTime)/1000);
-    panel.innerHTML = `
-      <div class="match-done">
-        <div class="fc-pos">TAMAMLANDI</div>
-        <div class="fc-word">Tüm çiftler eşleşti 🎉</div>
-        <div class="fc-example">${matchState.moves} hamlede, ${seconds} saniyede.</div>
-        <div class="fc-controls" style="margin-top:20px;">
-          <button class="btn primary" id="matchAgain">Yeni Tur</button>
-        </div>
-      </div>
-    `;
+    panel.innerHTML = `<div class="match-done"><div class="fc-pos">TAMAMLANDI</div><div class="fc-word">Tüm çiftler eşleşti 🎉</div><div class="fc-example">${matchState.moves} hamlede, ${seconds} saniyede.</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="matchAgain">Yeni Tur</button></div></div>`;
     document.getElementById('matchAgain').onclick = ()=>{ matchState = null; renderMatch(); };
     return;
   }
   panel.innerHTML = `
-    <div class="match-meta">
-      <span>HAMLE: ${matchState.moves}</span>
-      <span>EŞLEŞEN: ${matchState.matched.size/2} / ${matchState.cards.length/2}</span>
-    </div>
+    <div class="match-meta"><span>HAMLE: ${matchState.moves}</span><span>EŞLEŞEN: ${matchState.matched.size/2} / ${matchState.cards.length/2}</span></div>
     <div class="match-grid" id="matchGrid"></div>
-    <div class="fc-controls" style="margin-top:18px;">
-      <button class="btn" id="matchReset">Yeni Kartlarla Başla</button>
-    </div>
+    <div class="fc-controls" style="margin-top:18px;"><button class="btn" id="matchReset">Yeni Kartlarla Başla</button></div>
   `;
   const grid = document.getElementById('matchGrid');
   matchState.cards.forEach((c, idx)=>{
@@ -625,11 +471,8 @@ function renderMatch(){
     const isMatched = matchState.matched.has(idx);
     const isSelected = matchState.selected.includes(idx);
     el.className = 'm-card ' + (c.type==='tr'?'tr ':'') + (isMatched?'matched':'') + (isSelected?'selected':'');
-    el.textContent = c.text;
-    el.dataset.idx = idx;
-    if(!isMatched){
-      el.onclick = ()=> handleMatchClick(idx);
-    }
+    el.textContent = c.text; el.dataset.idx = idx;
+    if(!isMatched) el.onclick = ()=> handleMatchClick(idx);
     grid.appendChild(el);
   });
   document.getElementById('matchReset').onclick = ()=>{ matchState = null; renderMatch(); };
@@ -644,21 +487,17 @@ function handleMatchClick(idx){
     const [a,b] = matchState.selected;
     const cardA = matchState.cards[a], cardB = matchState.cards[b];
     if(cardA.key === cardB.key && cardA.type !== cardB.type){
-      matchState.matched.add(a);
-      matchState.matched.add(b);
+      matchState.matched.add(a); matchState.matched.add(b);
       bumpMastery(cardA.en, true);
-      matchState.selected = [];
-      renderMatch();
+      matchState.selected = []; renderMatch();
     } else {
       renderMatch();
       setTimeout(()=>{ matchState.selected = []; renderMatch(); }, 550);
     }
-  } else {
-    renderMatch();
-  }
+  } else renderMatch();
 }
 
-/* ================= QUIZ ================= */
+// ================= QUIZ =================
 let quizState = null;
 
 function newQuiz(){
@@ -669,16 +508,7 @@ function newQuiz(){
 function renderQuiz(){
   if(!quizState) newQuiz();
   if(quizState.index >= quizState.order.length){
-    panel.innerHTML = `
-      <div class="quiz-end">
-        <div class="fc-pos">SONUÇ</div>
-        <div class="quiz-score">${quizState.correct} / ${quizState.order.length}</div>
-        <div class="fc-example">${quizState.correct === quizState.order.length ? 'Mükemmel! Hepsini bildin.' : 'İyi iş — zayıf kaldığın kelimeleri kartlarla tekrar et.'}</div>
-        <div class="fc-controls" style="margin-top:20px;">
-          <button class="btn primary" id="quizAgain">Tekrar Dene</button>
-        </div>
-      </div>
-    `;
+    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">SONUÇ</div><div class="quiz-score">${quizState.correct} / ${quizState.order.length}</div><div class="fc-example">${quizState.correct === quizState.order.length ? 'Mükemmel! Hepsini bildin.' : 'İyi iş — zayıf kaldığın kelimeleri kartlarla tekrar et.'}</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="quizAgain">Tekrar Dene</button></div></div>`;
     document.getElementById('quizAgain').onclick = ()=>{ quizState = null; renderQuiz(); };
     return;
   }
@@ -687,22 +517,14 @@ function renderQuiz(){
   const options = shuffle([w.tr, ...wrongPool]);
 
   panel.innerHTML = `
-    <div class="quiz-meta">
-      <span>SORU ${quizState.index+1} / ${quizState.order.length}</span>
-      <span>DOĞRU: ${quizState.correct}</span>
-    </div>
-    <div class="quiz-prompt">
-      <div class="quiz-word">${w.en}</div>
-      <div class="quiz-instruction">bu kelimenin anlamı nedir?</div>
-    </div>
-    <div class="quiz-options" id="quizOptions"></div>
-    <div class="quiz-feedback" id="quizFeedback"></div>
+    <div class="quiz-meta"><span>SORU ${quizState.index+1} / ${quizState.order.length}</span><span>DOĞRU: ${quizState.correct}</span></div>
+    <div class="quiz-prompt"><div class="quiz-word">${w.en}</div><div class="quiz-instruction">bu kelimenin anlamı nedir?</div></div>
+    <div class="quiz-options" id="quizOptions"></div><div class="quiz-feedback" id="quizFeedback"></div>
   `;
   const optsEl = document.getElementById('quizOptions');
   options.forEach(opt=>{
     const b = document.createElement('button');
-    b.className = 'q-opt';
-    b.textContent = opt;
+    b.className = 'q-opt'; b.textContent = opt;
     b.onclick = ()=> handleQuizAnswer(opt, w, optsEl);
     optsEl.appendChild(b);
   });
@@ -720,18 +542,11 @@ function handleQuizAnswer(opt, w, optsEl){
   const success = opt === w.tr;
   if(success) quizState.correct++;
   bumpMastery(w.en, success);
-  document.getElementById('quizFeedback').textContent = success
-    ? 'Doğru! ' + w.ex.replace('___', w.en)
-    : 'Doğrusu: ' + w.tr + '  ·  ' + w.ex.replace('___', w.en);
-
-  setTimeout(()=>{
-    quizState.index++;
-    quizState.answered = false;
-    renderQuiz();
-  }, 1600);
+  document.getElementById('quizFeedback').textContent = success ? 'Doğru! ' + w.ex.replace('___', w.en) : 'Doğrusu: ' + w.tr + '  ·  ' + w.ex.replace('___', w.en);
+  setTimeout(()=>{ quizState.index++; quizState.answered = false; renderQuiz(); }, 1600);
 }
 
-/* ================= TYPING ================= */
+// ================= TYPING =================
 let typeState = null;
 
 function newTypeRound(){
@@ -742,49 +557,16 @@ function newTypeRound(){
 function renderType(){
   if(!typeState) newTypeRound();
   if(typeState.index >= typeState.order.length){
-    const wrongList = typeState.wrong.map(w => `
-      <div class="review-row">
-        <div class="review-en">${w.en}</div>
-        <div class="review-mid">
-          <div class="review-tr">${w.tr}</div>
-          <div class="review-ex">${w.ex.replace('___', w.en)}</div>
-        </div>
-        <div class="review-given">${w.given ? 'yazdığın: “' + w.given + '”' : 'boş bırakıldı'}</div>
-      </div>
-    `).join('');
-    panel.innerHTML = `
-      <div class="quiz-end">
-        <div class="fc-pos">SONUÇ</div>
-        <div class="quiz-score">${typeState.correct} / ${typeState.order.length}</div>
-        <div class="fc-example">Yazarak hatırlamak en kalıcı yöntemdir.</div>
-        <div class="fc-controls" style="margin-top:20px;">
-          <button class="btn primary" id="typeAgain">Tekrar Dene</button>
-        </div>
-      </div>
-      ${typeState.wrong.length ? `
-        <div class="review-section">
-          <div class="review-title">Yanlış / Eksik Yazılanlar (${typeState.wrong.length})</div>
-          ${wrongList}
-        </div>
-      ` : `<div class="review-section"><div class="review-title" style="color:var(--sage);">Hepsini doğru yazdın 🎉</div></div>`}
-    `;
+    const wrongList = typeState.wrong.map(w => `<div class="review-row"><div class="review-en">${w.en}</div><div class="review-mid"><div class="review-tr">${w.tr}</div><div class="review-ex">${w.ex.replace('___', w.en)}</div></div><div class="review-given">${w.given ? 'yazdığın: “' + w.given + '”' : 'boş bırakıldı'}</div></div>`).join('');
+    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">SONUÇ</div><div class="quiz-score">${typeState.correct} / ${typeState.order.length}</div><div class="fc-example">Yazarak hatırlamak en kalıcı yöntemdir.</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="typeAgain">Tekrar Dene</button></div></div>${typeState.wrong.length ? `<div class="review-section"><div class="review-title">Yanlış / Eksik Yazılanlar (${typeState.wrong.length})</div>${wrongList}</div>` : `<div class="review-section"><div class="review-title" style="color:var(--sage);">Hepsini doğru yazdın 🎉</div></div>`}`;
     document.getElementById('typeAgain').onclick = ()=>{ typeState = null; renderType(); };
     return;
   }
   const w = typeState.order[typeState.index];
   panel.innerHTML = `
-    <div class="type-meta">
-      <span>SORU ${typeState.index+1} / ${typeState.order.length}</span>
-      <span>DOĞRU: ${typeState.correct}</span>
-    </div>
-    <div class="type-prompt">
-      <div class="type-tr">${w.tr}</div>
-      <div class="type-example">${w.ex.split('___')[0]}<span class="type-blank">______</span>${w.ex.split('___')[1]}</div>
-    </div>
-    <div class="type-row">
-      <input class="type-input mono" id="typeInput" placeholder="İngilizcesini yaz" autocomplete="off" spellcheck="false">
-      <button class="btn primary" id="typeCheck">Kontrol Et</button>
-    </div>
+    <div class="type-meta"><span>SORU ${typeState.index+1} / ${typeState.order.length}</span><span>DOĞRU: ${typeState.correct}</span></div>
+    <div class="type-prompt"><div class="type-tr">${w.tr}</div><div class="type-example">${w.ex.split('___')[0]}<span class="type-blank">______</span>${w.ex.split('___')[1]}</div></div>
+    <div class="type-row"><input class="type-input mono" id="typeInput" placeholder="İngilizcesini yaz" autocomplete="off" spellcheck="false"><button class="btn primary" id="typeCheck">Kontrol Et</button></div>
     <div class="type-feedback" id="typeFeedback"></div>
   `;
   const input = document.getElementById('typeInput');
@@ -796,30 +578,101 @@ function renderType(){
     const success = val === w.en.toLowerCase();
     input.classList.add(success ? 'correct' : 'incorrect');
     input.disabled = true;
-    if(success) typeState.correct++;
-    else typeState.wrong.push({...w, given: val});
+    if(success) typeState.correct++; else typeState.wrong.push({...w, given: val});
     bumpMastery(w.en, success);
-    document.getElementById('typeFeedback').textContent = success
-      ? 'Doğru!'
-      : `Doğrusu: "${w.en}"`;
-    setTimeout(()=>{
-      typeState.index++;
-      typeState.checked = false;
-      renderType();
-    }, 1400);
+    document.getElementById('typeFeedback').textContent = success ? 'Doğru!' : `Doğrusu: "${w.en}"`;
+    setTimeout(()=>{ typeState.index++; typeState.checked = false; renderType(); }, 1400);
   };
   document.getElementById('typeCheck').onclick = check;
   input.addEventListener('keydown', e=>{ if(e.key === 'Enter') check(); });
 }
 
 /* init */
+/* init */
 selectNewSet();
+
+// 🌟 Tüm Kelimeleri Seçme Fonksiyonu
+function selectAllWords() {
+  // Tüm kelimeleri al ve karıştır (limit yok)
+  const karisik = shuffle([...ALL_WORDS]);
+  WORDS = karisik;
+  
+  // Başlık ve alt başlığı tüm kelime sayısına göre güncelle
+  document.getElementById('eyebrowLabel').textContent = WORDS.length + ' kart · sözcük çekmecesi';
+  document.getElementById('subLabel').textContent = 'Tüm kelimeler devrede! Kartları çevir, eşleştir, sına — ' + WORDS.length + ' kelimeyi hafızaya kazı.';
+
+  // Ustalık ve oyun durumlarını sıfırla
+  mastery = {};
+  WORDS.forEach(w => mastery[w.en] = 'new');
+
+  storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
+  matchState = null;
+  quizState = null;
+  typeState = null;
+
+  // Ekranı yeni duruma göre çiz
+  renderProgress();
+  const aktifTab = document.querySelector('nav.tabs button.active');
+  if(aktifTab) render(aktifTab.dataset.tab);
+}
+
+// 🎯 Odaklı Yazma Fonksiyonu
+async function renderFocusedType() {
+  // Veriler gelene kadar ekrana yükleme animasyonu çiz
+  panel.innerHTML = `
+    <div class="fc-pos">BULUTTAN EN ÇOK HATA YAPTIĞIN KELİMELER ANALİZ EDİLİYOR...</div>
+    <div style="text-align:center; padding:20px; font-size:24px;">⏳</div>
+  `;
+  
+  try {
+    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
+    let stats = [];
+    
+    snapshot.forEach(doc => {
+      let data = doc.data();
+      let wordObj = ALL_WORDS.find(w => w.en === data.en);
+      if(wordObj && data.yanlis > 0) {
+        stats.push({ ...wordObj, yanlis: data.yanlis });
+      }
+    });
+    
+    // Eğer hiç yanlış yapılan kelime yoksa tatlı bir mesaj göster
+    if (stats.length === 0) {
+      panel.innerHTML = `
+        <div class="fc-pos" style="color:var(--sage);">HARİKA HABER!</div>
+        <div class="fc-example" style="margin-top:20px;">Bulutta henüz hiç hatalı kelimen yok. Normal yazma alıştırmasına veya diğer modlara geçebilirsin! 🎉</div>
+      `;
+      return;
+    }
+    
+    // En çok hata yapılanları sırala ve ilk 10'unu al
+    stats.sort((a,b) => b.yanlis - a.yanlis);
+    const top10 = stats.slice(0, 10);
+    
+    // Kelime havuzunu geçici olarak bu 10 kelimeyle sınırla ve karıştır
+    WORDS = shuffle(top10);
+    
+    // Üst bilgileri güncelle
+    document.getElementById('eyebrowLabel').textContent = WORDS.length + ' odaklı kart · sözcük çekmecesi';
+    document.getElementById('subLabel').textContent = '🎯 En çok zorlandığın ' + WORDS.length + ' kelimeyi yazarak hafızaya kazı.';
+    
+    mastery = {};
+    WORDS.forEach(w => mastery[w.en] = 'new');
+    renderProgress();
+    
+    // Yazma alıştırmasının state'ini sıfırla ve asıl yazma ekranını çiz
+    typeState = null; 
+    renderType();
+    
+  } catch (error) {
+    console.error(error);
+    panel.innerHTML = `<div class="fc-pos" style="color:var(--stamp-dark)">HATA OLUŞTU</div><div class="fc-example">Veriler çekilemedi. İnternet bağlantını kontrol et.</div>`;
+  }
+}
 // --- PWA MOTORUNU AKTİF ETME ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('Uygulama Motoru Hazır!'))
-      .catch(err => console.log('Motor Hatası:', err));
+    navigator.serviceWorker.register('sw.js').then(reg => console.log('Uygulama Motoru Hazır!')).catch(err => console.log('Motor Hatası:', err));
   });
 }
 </script>
