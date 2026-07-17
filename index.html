@@ -329,6 +329,7 @@ function render(tab){
 }
 
 // --- YENİ ZORLU KELİMELER SEKME MANTIĞI ---
+// --- YENİ ZORLU KELİMELER SEKME MANTIĞI ---
 async function renderHardWords() {
   panel.innerHTML = `
     <div class="fc-pos">BULUTTAN VERİLER ÇEKİLİYOR...</div>
@@ -347,7 +348,13 @@ async function renderHardWords() {
     
     stats.sort((a,b) => b.yanlis - a.yanlis); // En çok yanlış yapılanlar en üste
     
-    let html = `<div class="fc-pos">EN ÇOK ZORLANDIĞIN KELİMELER (BULUT KAYDI)</div>`;
+    let html = `
+      <div class="fc-pos">EN ÇOK ZORLANDIĞIN KELİMELER (BULUT KAYDI)</div>
+      <div style="text-align:center; margin-bottom: 20px;">
+        <button class="btn" style="border-color:var(--stamp); color:var(--stamp-dark);" onclick="resetCloudStats()">🗑️ Tüm Geçmişi Sıfırla</button>
+      </div>
+    `;
+
     if(stats.length === 0) {
       html += `<div class="fc-example" style="margin-top:20px;">Henüz hiç yanlış yapmadın! Eşleştirme veya Quiz oynayarak hafızayı doldur. 🎉</div>`;
     } else {
@@ -368,6 +375,30 @@ async function renderHardWords() {
   }
 }
 
+// --- GEÇMİŞİ SIFIRLAMA FONKSİYONU ---
+async function resetCloudStats() {
+  if(!confirm("Tüm hata geçmişini tamamen sıfırlamak istediğine emin misin? Bu işlem geri alınamaz!")) return;
+
+  panel.innerHTML = `
+    <div class="fc-pos">GEÇMİŞ SİLİNİYOR... Lütfen bekle.</div>
+    <div style="text-align:center; padding:20px; font-size:24px;">⏳</div>
+  `;
+  try {
+    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
+    const batch = db.batch();
+    
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    alert("Tüm hata geçmişi tertemiz oldu! 🧹✨");
+    renderHardWords(); // Listeyi boş haliyle yeniden çiz
+  } catch (error) {
+    alert("Sıfırlama sırasında hata oluştu: " + error.message);
+    renderHardWords();
+  }
+}
 // ================= STORY =================
 let storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
 
