@@ -65,29 +65,39 @@
   button.btn.stamp{ background:var(--stamp); color:#fff; border-color:var(--stamp-dark); }
   button.btn:disabled{ opacity:.4; cursor:default; }
 
-  .match-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
-  .match-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-  @media (max-width:480px){ .match-grid{ grid-template-columns:repeat(3,1fr);} }
-  .m-card{ aspect-ratio:1/1.05; background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:6px; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px; font-size:13px; font-weight:600; cursor:pointer; user-select:none; transition:all .2s ease; }
-  .m-card.tr{ font-style:italic; font-weight:500; color:var(--sage); }
-  .m-card.selected{ border-color:var(--stamp); background:#fff2ea; }
-  .m-card.matched{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); opacity:.55; cursor:default; }
-  .m-card.wrong{ animation:shake .35s; border-color:var(--stamp); }
-  @keyframes shake{ 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
-  .match-done{ text-align:center; padding:30px 10px; }
-
-  .quiz-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:18px; }
-  .quiz-prompt{ text-align:center; margin-bottom:22px; }
-  .quiz-word{ font-size:32px; font-weight:700; margin-bottom:4px; }
-  .quiz-instruction{ font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--kraft); }
-  .quiz-options{ display:grid; gap:10px; }
-  .q-opt{ text-align:left; padding:14px 16px; border-radius:6px; border:1.5px solid var(--kraft-light); background:var(--paper-dark); font-family:'Fraunces', serif; font-size:17px; cursor:pointer; font-style:italic; }
-  .q-opt.correct{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); font-weight:600; }
-  .q-opt.incorrect{ background:#FBE4DC; border-color:var(--stamp); color:var(--stamp-dark); }
-  .q-opt:disabled{ cursor:default; }
-  .quiz-feedback{ margin-top:16px; text-align:center; font-size:14px; color:var(--ink-soft); min-height:20px;}
   .quiz-end{ text-align:center; padding:20px 10px; }
   .quiz-score{ font-size:46px; font-weight:700; color:var(--stamp); margin:10px 0;}
+
+  /* ---- SRS (SM-2) flashcard review ---- */
+  .srs-card{ text-align:center; padding:10px 0 6px; }
+  .srs-flip{ background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:10px; padding:38px 20px; min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s ease; }
+  .srs-flip:hover{ border-color:var(--kraft); }
+  .srs-back{ margin-top:14px; padding-top:14px; border-top:1.5px dashed var(--kraft-light); width:100%; }
+  .srs-tr{ font-size:20px; font-style:italic; color:var(--sage); font-weight:600; margin-bottom:6px; }
+  .srs-hint{ font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft); text-transform:uppercase; letter-spacing:.06em; margin-top:10px; }
+  .rate-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:20px; }
+  .rate-btn{ font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.03em; padding:12px 6px; border-radius:6px; border:1.5px solid; cursor:pointer; text-transform:uppercase; line-height:1.4; }
+  .rate-btn .sub{ display:block; font-size:9px; opacity:.7; margin-top:2px; }
+  .rate-forgot{ background:#FBE4DC; border-color:var(--stamp); color:var(--stamp-dark); }
+  .rate-hard{ background:#FBEFD8; border-color:#B98A2E; color:#8A6420; }
+  .rate-good{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); }
+  .rate-easy{ background:#DCEBEA; border-color:#3F8F87; color:#2C6B64; }
+  .rate-btn:hover{ transform:translateY(-1px); }
+  .srs-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:16px; }
+  .srs-empty{ text-align:center; padding:40px 10px; }
+
+  /* ---- Streak badge + Stats panel ---- */
+  .streak-badge{ display:inline-flex; align-items:center; gap:6px; font-family:'Space Mono',monospace; font-size:13px; font-weight:700; color:var(--stamp-dark); background:var(--card); border:1.5px solid var(--kraft-light); border-radius:20px; padding:6px 14px; margin:4px 0 18px; }
+  .stat-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:18px; }
+  @media (max-width:480px){ .stat-grid{ grid-template-columns:1fr 1fr; } }
+  .stat-card{ background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:8px; padding:16px 14px; text-align:center; }
+  .stat-num{ font-size:30px; font-weight:700; color:var(--stamp-dark); font-family:'Fraunces', serif; }
+  .stat-label{ font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:4px; }
+  .mastery-bar-wrap{ background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:8px; height:22px; overflow:hidden; display:flex; margin-bottom:6px; }
+  .mastery-bar-wrap div{ height:100%; }
+  .mastery-legend{ display:flex; gap:16px; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:var(--ink-soft); margin-bottom:18px; flex-wrap:wrap; }
+  .mastery-legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend-dot{ width:10px; height:10px; border-radius:2px; display:inline-block; }
 
   .type-prompt{ text-align:center; margin-bottom:18px; }
   .type-tr{ font-size:26px; font-style:italic; color:var(--sage); margin-bottom:8px; }
@@ -126,15 +136,16 @@
     </div>
 
     <div class="progress-rail" id="progressRail"></div>
+    <div style="text-align:center;"><span class="streak-badge" id="streakBadge">🔥 …</span></div>
   </header>
 
   <nav class="tabs" id="tabs">
     <button data-tab="story" class="active">Hikaye</button>
-    <button data-tab="match">Eşleştirme</button>
-    <button data-tab="quiz">Çoktan Seçmeli</button>
+    <button data-tab="srs">Tekrar</button>
     <button data-tab="type">Yazma</button>
     <button data-tab="focusedType" style="color: var(--sage); border-bottom-color: var(--sage);">Odaklı Yazma</button>
     <button data-tab="hard">Zorlu Kelimeler</button>
+    <button data-tab="stats">İstatistik</button>
   </nav>
 
   <div class="panel" id="panel"></div>
@@ -173,6 +184,108 @@ function updateCloudStats(en, success) {
       transaction.set(docRef, { en: en, dogru: dogru, yanlis: yanlis }, {merge: true});
     });
   }).catch(err => console.log("Bulut kaydı hatası:", err));
+}
+
+// ============ SM-2 ARALIKLI TEKRAR (SPACED REPETITION) ============
+// SM-2 algoritmasının klasik tanımına göre: her tekrarda kullanıcı 0-5 arası
+// bir "kalite" puanı verir (0-2: unutuldu, 3: zor ama hatırlandı, 4: iyi, 5: kolay).
+// Bu puana göre bir sonraki tekrar aralığı (interval) ve kolaylık faktörü (ease factor)
+// yeniden hesaplanır ve kelimenin bir sonraki gösterim tarihi (due) belirlenir.
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function addDays(dateStr, n){ const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
+
+function sm2Next(card, quality){
+  // card: { reps, ef, interval } — yoksa varsayılan değerler kullanılır
+  let reps = card.reps || 0;
+  let ef = card.ef || 2.5;
+  let interval = card.interval || 0;
+
+  if(quality < 3){
+    reps = 0;
+    interval = 1;
+  } else {
+    if(reps === 0) interval = 1;
+    else if(reps === 1) interval = 6;
+    else interval = Math.round(interval * ef);
+    reps += 1;
+  }
+
+  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  if(ef < 1.3) ef = 1.3;
+
+  return { reps, ef: Math.round(ef*100)/100, interval, due: addDays(todayStr(), interval), last: todayStr() };
+}
+
+// Bir kelimenin SM-2 durumunu buluta kaydeder
+function saveSm2(en, sm2){
+  const docRef = db.collection('userStats').doc(userCode).collection('words').doc(en);
+  docRef.set({ en, sm2 }, { merge: true }).catch(err => console.log('SM-2 kayıt hatası:', err));
+}
+
+// Tüm kelimelerin buluttaki durumunu (dogru/yanlis + sm2) çeker
+async function fetchAllWordStats(){
+  const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
+  const map = {};
+  snapshot.forEach(doc => { map[doc.id] = doc.data(); });
+  return map;
+}
+
+// ============ SERİ (STREAK) & GENEL İSTATİSTİK TAKİBİ ============
+let userStats = { streak:0, longestStreak:0, lastActiveDate:null, totalReviews:0, totalCorrect:0, totalWrong:0 };
+let userStatsLoaded = false;
+
+async function loadUserStats(){
+  try{
+    const doc = await db.collection('userStats').doc(userCode).get();
+    if(doc.exists){
+      const d = doc.data();
+      userStats = {
+        streak: d.streak || 0,
+        longestStreak: d.longestStreak || 0,
+        lastActiveDate: d.lastActiveDate || null,
+        totalReviews: d.totalReviews || 0,
+        totalCorrect: d.totalCorrect || 0,
+        totalWrong: d.totalWrong || 0,
+      };
+    }
+    // Bir günden fazla ara verilmişse seriyi kır (bugün ve dün dışında bir tarihse)
+    const today = todayStr();
+    const yesterday = addDays(today, -1);
+    if(userStats.lastActiveDate && userStats.lastActiveDate !== today && userStats.lastActiveDate !== yesterday){
+      userStats.streak = 0;
+    }
+  } catch(err){
+    console.log('İstatistik yüklenemedi:', err);
+  }
+  userStatsLoaded = true;
+  renderStreakBadge();
+}
+
+function saveUserStats(){
+  db.collection('userStats').doc(userCode).set(userStats, { merge: true }).catch(err => console.log('İstatistik kayıt hatası:', err));
+}
+
+// Her doğru/yanlış cevapta çağrılır: günlük seriyi ve toplam sayaçları günceller
+function registerActivity(success){
+  userStats.totalReviews++;
+  if(success) userStats.totalCorrect++; else userStats.totalWrong++;
+
+  const today = todayStr();
+  if(userStats.lastActiveDate !== today){
+    const yesterday = addDays(today, -1);
+    userStats.streak = (userStats.lastActiveDate === yesterday) ? userStats.streak + 1 : 1;
+    userStats.lastActiveDate = today;
+    if(userStats.streak > userStats.longestStreak) userStats.longestStreak = userStats.streak;
+  }
+  saveUserStats();
+  renderStreakBadge();
+}
+
+function renderStreakBadge(){
+  const el = document.getElementById('streakBadge');
+  if(!el) return;
+  if(!userStatsLoaded){ el.textContent = '🔥 …'; return; }
+  el.textContent = userStats.streak > 0 ? `🔥 ${userStats.streak} günlük seri` : '🔥 Bugün pratik yap, seriyi başlat!';
 }
 
 // --- SENİN DEV KELİME HAVUZUN BURASI ---
@@ -308,8 +421,7 @@ function selectNewSet() {
   WORDS.forEach(w => mastery[w.en] = 'new');
 
   storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
-  matchState = null;
-  quizState = null;
+  srsState = null;
   typeState = null;
 
   renderProgress();
@@ -325,6 +437,7 @@ function bumpMastery(en, success){
     if(cur !== 'known') mastery[en] = 'learning';
   }
   updateCloudStats(en, success); // BULUTA YAZ
+  registerActivity(success); // SERİ VE İSTATİSTİK GÜNCELLE
   renderProgress();
 }
 
@@ -351,11 +464,11 @@ tabsNav.addEventListener('click', e=>{
 
 function render(tab){
   if(tab === 'story') renderStory();
-  else if(tab === 'match') renderMatch();
-  else if(tab === 'quiz') renderQuiz();
+  else if(tab === 'srs') renderSrs();
   else if(tab === 'type') renderType();
   else if(tab === 'hard') renderHardWords(); // YENİ BULUT SEKME
   else if(tab === 'focusedType') renderFocusedType();
+  else if(tab === 'stats') renderStats();
 }
 
 // --- YENİ ZORLU KELİMELER SEKME MANTIĞI ---
@@ -429,6 +542,61 @@ async function resetCloudStats() {
     renderHardWords();
   }
 }
+// ================= İSTATİSTİK PANELİ =================
+async function renderStats(){
+  panel.innerHTML = `<div class="srs-empty"><div class="fc-pos">İSTATİSTİKLER YÜKLENİYOR…</div><div style="font-size:24px;margin-top:14px;">⏳</div></div>`;
+  let allStats = {};
+  try{ allStats = await fetchAllWordStats(); }
+  catch(err){ /* buluta erişilemezse yine de genel serileri gösterebiliriz */ }
+
+  const today = todayStr();
+  let known = 0, learning = 0, seen = 0, dueToday = 0;
+  ALL_WORDS.forEach(w=>{
+    const s = allStats[w.en];
+    if(!s){ return; }
+    seen++;
+    const sm2 = s.sm2;
+    if(sm2){
+      if(sm2.reps >= 2) known++; else learning++;
+      if(sm2.due && sm2.due <= today) dueToday++;
+    } else if((s.dogru||0) > 0){
+      learning++;
+    }
+  });
+  const untouched = Math.max(ALL_WORDS.length - seen, 0);
+
+  const totalAnswered = userStats.totalCorrect + userStats.totalWrong;
+  const accuracy = totalAnswered > 0 ? Math.round((userStats.totalCorrect / totalAnswered) * 100) : 0;
+
+  const pct = (n)=> ALL_WORDS.length ? Math.round((n/ALL_WORDS.length)*100) : 0;
+
+  panel.innerHTML = `
+    <div class="fc-pos" style="margin-bottom:14px;">SERİ & MOTİVASYON</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">🔥 ${userStats.streak}</div><div class="stat-label">Günlük Seri</div></div>
+      <div class="stat-card"><div class="stat-num">🏆 ${userStats.longestStreak}</div><div class="stat-label">En Uzun Seri</div></div>
+      <div class="stat-card"><div class="stat-num">${userStats.totalReviews}</div><div class="stat-label">Toplam Tekrar</div></div>
+      <div class="stat-card"><div class="stat-num">%${accuracy}</div><div class="stat-label">Doğruluk Oranı</div></div>
+    </div>
+
+    <div class="fc-pos" style="margin-bottom:10px;">KELİME HAVUZU (${ALL_WORDS.length} kelime)</div>
+    <div class="mastery-bar-wrap">
+      <div style="width:${pct(known)}%; background:var(--sage);"></div>
+      <div style="width:${pct(learning)}%; background:var(--kraft-light);"></div>
+      <div style="width:${pct(untouched)}%; background:var(--paper);"></div>
+    </div>
+    <div class="mastery-legend">
+      <span><i class="legend-dot" style="background:var(--sage);"></i>Öğrenildi: ${known}</span>
+      <span><i class="legend-dot" style="background:var(--kraft-light);"></i>Öğreniliyor: ${learning}</span>
+      <span><i class="legend-dot" style="background:var(--paper); border:1px solid var(--kraft-light);"></i>Hiç görülmedi: ${untouched}</span>
+    </div>
+
+    <div class="fc-example" style="text-align:center; margin-top:10px;">
+      ${dueToday > 0 ? `Bugün <b>${dueToday}</b> kelimenin tekrar zamanı geldi — "Tekrar" sekmesinden pratik yapabilirsin.` : 'Bugün için bekleyen bir tekrar yok, harika gidiyorsun! 🎉'}
+    </div>
+  `;
+}
+
 // ================= STORY =================
 let storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
 
@@ -517,109 +685,84 @@ function renderStory(){
   document.getElementById('storyGen').onclick = generateStory;
 }
 
-// ================= MATCHING =================
-let matchState = null;
+// ================= SRS (SM-2) TEKRAR MODU =================
+let srsState = null; // { queue:[{word, cardData}], index, flipped, correctCount }
+const SRS_NEW_LIMIT = 10; // günde en fazla bu kadar "hiç görülmemiş" kelime eklenir
 
-function newMatchRound(){
-  const pool = shuffle(WORDS).slice(0, 8);
-  const cards = [];
-  pool.forEach((w,i)=>{ cards.push({key:i, type:'en', text:w.en, en:w.en}); cards.push({key:i, type:'tr', text:w.tr, en:w.en}); });
-  matchState = { cards: shuffle(cards), selected: [], matched: new Set(), moves: 0, startTime: Date.now() };
-}
-
-function renderMatch(){
-  if(!matchState) newMatchRound();
-  const allMatched = matchState.matched.size === matchState.cards.length;
-  if(allMatched){
-    const seconds = Math.round((Date.now()-matchState.startTime)/1000);
-    panel.innerHTML = `<div class="match-done"><div class="fc-pos">TAMAMLANDI</div><div class="fc-word">Tüm çiftler eşleşti 🎉</div><div class="fc-example">${matchState.moves} hamlede, ${seconds} saniyede.</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="matchAgain">Yeni Tur</button></div></div>`;
-    document.getElementById('matchAgain').onclick = ()=>{ matchState = null; renderMatch(); };
+async function newSrsRound(){
+  panel.innerHTML = `<div class="srs-empty"><div class="fc-pos">TEKRAR LİSTESİ HAZIRLANIYOR…</div><div style="font-size:24px;margin-top:14px;">⏳</div></div>`;
+  let allStats = {};
+  try{ allStats = await fetchAllWordStats(); }
+  catch(err){
+    panel.innerHTML = `<div class="srs-empty"><div class="fc-pos" style="color:var(--stamp-dark)">HATA</div><div class="fc-example">Bulut verisi çekilemedi. İnternet bağlantını kontrol et.</div></div>`;
     return;
   }
-  panel.innerHTML = `
-    <div class="match-meta"><span>HAMLE: ${matchState.moves}</span><span>EŞLEŞEN: ${matchState.matched.size/2} / ${matchState.cards.length/2}</span></div>
-    <div class="match-grid" id="matchGrid"></div>
-    <div class="fc-controls" style="margin-top:18px;"><button class="btn" id="matchReset">Yeni Kartlarla Başla</button></div>
-  `;
-  const grid = document.getElementById('matchGrid');
-  matchState.cards.forEach((c, idx)=>{
-    const el = document.createElement('div');
-    const isMatched = matchState.matched.has(idx);
-    const isSelected = matchState.selected.includes(idx);
-    el.className = 'm-card ' + (c.type==='tr'?'tr ':'') + (isMatched?'matched':'') + (isSelected?'selected':'');
-    el.textContent = c.text; el.dataset.idx = idx;
-    if(!isMatched) el.onclick = ()=> handleMatchClick(idx);
-    grid.appendChild(el);
-  });
-  document.getElementById('matchReset').onclick = ()=>{ matchState = null; renderMatch(); };
-}
-
-function handleMatchClick(idx){
-  if(matchState.selected.includes(idx)) return;
-  if(matchState.selected.length === 2) return;
-  matchState.selected.push(idx);
-  if(matchState.selected.length === 2){
-    matchState.moves++;
-    const [a,b] = matchState.selected;
-    const cardA = matchState.cards[a], cardB = matchState.cards[b];
-    if(cardA.key === cardB.key && cardA.type !== cardB.type){
-      matchState.matched.add(a); matchState.matched.add(b);
-      bumpMastery(cardA.en, true);
-      matchState.selected = []; renderMatch();
+  const today = todayStr();
+  const due = [], fresh = [];
+  ALL_WORDS.forEach(w=>{
+    const s = allStats[w.en];
+    const sm2 = s && s.sm2;
+    if(sm2 && sm2.due){
+      if(sm2.due <= today) due.push({ word: w, sm2 });
     } else {
-      renderMatch();
-      setTimeout(()=>{ matchState.selected = []; renderMatch(); }, 550);
+      fresh.push({ word: w, sm2: null });
     }
-  } else renderMatch();
+  });
+  const queue = shuffle(due).concat(shuffle(fresh).slice(0, SRS_NEW_LIMIT));
+  srsState = { queue, index: 0, flipped: false, correctCount: 0, dueTotal: due.length, newTotal: Math.min(fresh.length, SRS_NEW_LIMIT) };
+  renderSrs();
 }
 
-// ================= QUIZ =================
-let quizState = null;
-
-function newQuiz(){
-  const order = shuffle(WORDS);
-  quizState = { order, index:0, correct:0, answered:false };
-}
-
-function renderQuiz(){
-  if(!quizState) newQuiz();
-  if(quizState.index >= quizState.order.length){
-    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">SONUÇ</div><div class="quiz-score">${quizState.correct} / ${quizState.order.length}</div><div class="fc-example">${quizState.correct === quizState.order.length ? 'Mükemmel! Hepsini bildin.' : 'İyi iş — zayıf kaldığın kelimeleri kartlarla tekrar et.'}</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="quizAgain">Tekrar Dene</button></div></div>`;
-    document.getElementById('quizAgain').onclick = ()=>{ quizState = null; renderQuiz(); };
+function renderSrs(){
+  if(!srsState){ newSrsRound(); return; }
+  if(srsState.index >= srsState.queue.length){
+    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">TEKRAR TAMAMLANDI</div><div class="quiz-score">${srsState.correctCount} / ${srsState.queue.length}</div><div class="fc-example">${srsState.queue.length === 0 ? 'Bugün için tekrar edilecek kelime yok — harika gidiyorsun! 🎉' : 'Bir sonraki tekrarların, verdiğin cevaplara göre otomatik zamanlandı.'}</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="srsAgain">Listeyi Yenile</button></div></div>`;
+    document.getElementById('srsAgain').onclick = ()=>{ srsState = null; renderSrs(); };
     return;
   }
-  const w = quizState.order[quizState.index];
-  const wrongPool = shuffle(WORDS.filter(x=>x.en!==w.en)).slice(0,3).map(x=>x.tr);
-  const options = shuffle([w.tr, ...wrongPool]);
-
+  const item = srsState.queue[srsState.index];
+  const w = item.word;
   panel.innerHTML = `
-    <div class="quiz-meta"><span>SORU ${quizState.index+1} / ${quizState.order.length}</span><span>DOĞRU: ${quizState.correct}</span></div>
-    <div class="quiz-prompt"><div class="quiz-word">${w.en}</div><div class="quiz-instruction">bu kelimenin anlamı nedir?</div></div>
-    <div class="quiz-options" id="quizOptions"></div><div class="quiz-feedback" id="quizFeedback"></div>
+    <div class="srs-meta"><span>KART ${srsState.index+1} / ${srsState.queue.length}</span><span>BUGÜN: ${srsState.dueTotal} tekrar · ${srsState.newTotal} yeni</span></div>
+    <div class="srs-card">
+      <div class="fc-pos">${w.pos}</div>
+      <div class="srs-flip" id="srsFlip">
+        <div class="fc-word">${w.en}</div>
+        ${srsState.flipped ? `
+          <div class="srs-back">
+            <div class="srs-tr">${w.tr}</div>
+            <div class="fc-example">${w.ex.replace('___', w.en)}</div>
+          </div>
+        ` : `<div class="srs-hint">Anlamı görmek için tıkla</div>`}
+      </div>
+      ${srsState.flipped ? `
+        <div class="rate-row">
+          <button class="rate-btn rate-forgot" data-q="1">Unuttum<span class="sub">tekrar bugün</span></button>
+          <button class="rate-btn rate-hard" data-q="3">Zor<span class="sub">kısa aralık</span></button>
+          <button class="rate-btn rate-good" data-q="4">İyi<span class="sub">normal aralık</span></button>
+          <button class="rate-btn rate-easy" data-q="5">Kolay<span class="sub">uzun aralık</span></button>
+        </div>
+      ` : ''}
+    </div>
   `;
-  const optsEl = document.getElementById('quizOptions');
-  options.forEach(opt=>{
-    const b = document.createElement('button');
-    b.className = 'q-opt'; b.textContent = opt;
-    b.onclick = ()=> handleQuizAnswer(opt, w, optsEl);
-    optsEl.appendChild(b);
-  });
+  if(!srsState.flipped){
+    document.getElementById('srsFlip').onclick = ()=>{ srsState.flipped = true; renderSrs(); };
+  } else {
+    document.querySelectorAll('.rate-btn').forEach(b=>{
+      b.onclick = ()=> handleSrsRating(w, item.sm2, parseInt(b.dataset.q, 10));
+    });
+  }
 }
 
-function handleQuizAnswer(opt, w, optsEl){
-  if(quizState.answered) return;
-  quizState.answered = true;
-  const buttons = [...optsEl.children];
-  buttons.forEach(b=>{
-    b.disabled = true;
-    if(b.textContent === w.tr) b.classList.add('correct');
-    else if(b.textContent === opt) b.classList.add('incorrect');
-  });
-  const success = opt === w.tr;
-  if(success) quizState.correct++;
-  bumpMastery(w.en, success);
-  document.getElementById('quizFeedback').textContent = success ? 'Doğru! ' + w.ex.replace('___', w.en) : 'Doğrusu: ' + w.tr + '  ·  ' + w.ex.replace('___', w.en);
-  setTimeout(()=>{ quizState.index++; quizState.answered = false; renderQuiz(); }, 1600);
+function handleSrsRating(w, prevSm2, quality){
+  const next = sm2Next(prevSm2 || {}, quality);
+  saveSm2(w.en, next);
+  const success = quality >= 3;
+  if(success) srsState.correctCount++;
+  bumpMastery(w.en, success); // ilerleme noktalarını ve seriyi de günceller
+  srsState.index++;
+  srsState.flipped = false;
+  renderSrs();
 }
 
 // ================= TYPING =================
@@ -664,8 +807,8 @@ function renderType(){
 }
 
 /* init */
-/* init */
 selectNewSet();
+loadUserStats();
 
 // 🌟 Tüm Kelimeleri Seçme Fonksiyonu
 function selectAllWords() {
@@ -682,8 +825,7 @@ function selectAllWords() {
   WORDS.forEach(w => mastery[w.en] = 'new');
 
   storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
-  matchState = null;
-  quizState = null;
+  srsState = null;
   typeState = null;
 
   // Ekranı yeni duruma göre çiz
