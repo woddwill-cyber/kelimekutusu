@@ -216,17 +216,27 @@ function sm2Next(card, quality){
   return { reps, ef: Math.round(ef*100)/100, interval, due: addDays(todayStr(), interval), last: todayStr() };
 }
 
+// Bulut yazması tamamlanmadan aynı oturumda tekrar okuma yapılırsa (ör. "Listeyi Yenile"ye
+// hemen basmak) eski veri gelmesin diye, en son yazılan sm2 değerlerini burada da tutuyoruz.
+let srsLocalCache = {};
+
 // Bir kelimenin SM-2 durumunu buluta kaydeder
-function saveSm2(en, sm2){
+async function saveSm2(en, sm2){
+  srsLocalCache[en] = { ...(srsLocalCache[en]||{}), en, sm2 };
   const docRef = db.collection('userStats').doc(userCode).collection('words').doc(en);
-  docRef.set({ en, sm2 }, { merge: true }).catch(err => console.log('SM-2 kayıt hatası:', err));
+  try{ await docRef.set({ en, sm2 }, { merge: true }); }
+  catch(err){ console.log('SM-2 kayıt hatası:', err); }
 }
 
-// Tüm kelimelerin buluttaki durumunu (dogru/yanlis + sm2) çeker
+// Tüm kelimelerin buluttaki durumunu (dogru/yanlis + sm2) çeker.
+// Henüz buluta yazılmamış olabilecek en güncel değerleri yerel önbellekten üzerine yazar.
 async function fetchAllWordStats(){
   const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
   const map = {};
   snapshot.forEach(doc => { map[doc.id] = doc.data(); });
+  Object.keys(srsLocalCache).forEach(en => {
+    map[en] = { ...(map[en]||{}), ...srsLocalCache[en] };
+  });
   return map;
 }
 
@@ -754,9 +764,9 @@ function renderSrs(){
   }
 }
 
-function handleSrsRating(w, prevSm2, quality){
+async function handleSrsRating(w, prevSm2, quality){
   const next = sm2Next(prevSm2 || {}, quality);
-  saveSm2(w.en, next);
+  await saveSm2(w.en, next);
   const success = quality >= 3;
   if(success) srsState.correctCount++;
   bumpMastery(w.en, success); // ilerleme noktalarını ve seriyi de günceller
