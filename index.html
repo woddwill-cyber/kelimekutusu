@@ -191,8 +191,16 @@ function updateCloudStats(en, success) {
 // bir "kalite" puanı verir (0-2: unutuldu, 3: zor ama hatırlandı, 4: iyi, 5: kolay).
 // Bu puana göre bir sonraki tekrar aralığı (interval) ve kolaylık faktörü (ease factor)
 // yeniden hesaplanır ve kelimenin bir sonraki gösterim tarihi (due) belirlenir.
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-function addDays(dateStr, n){ const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
+function todayStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDays(dateStr, n){
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d); // yerel tarih bileşenleriyle oluştur, saat dilimi kaymasını önler
+  dt.setDate(dt.getDate() + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
 
 function sm2Next(card, quality){
   // card: { reps, ef, interval } — yoksa varsayılan değerler kullanılır
@@ -406,6 +414,19 @@ const ALL_WORDS = [
   {en:"leisurely", pos:"sıfat/zarf", tr:"ağırdan alan, aceleyle olmayan", ex:"They took a ___ walk along the beach."},
   {en:"weep", pos:"fiil", tr:"ağlamak", ex:"She began to ___ quietly during the film."},
   {en:"appraise", pos:"fiil", tr:"değerlendirmek, kıymet biçmek", ex:"The expert was asked to ___ the old painting."},
+  {en:"rectangle", pos:"isim", tr:"dikdörtgen", ex:"The garden was shaped like a perfect ___."},
+  {en:"rubber", pos:"isim", tr:"lastik / silgi", ex:"She erased the mistake with a ___."},
+  {en:"accustom", pos:"fiil", tr:"alıştırmak", ex:"It took him weeks to ___ himself to the new schedule."},
+  {en:"resign", pos:"fiil", tr:"istifa etmek", ex:"She decided to ___ from her job."},
+  {en:"persuade", pos:"fiil", tr:"ikna etmek", ex:"He tried to ___ her to stay."},
+  {en:"mortify", pos:"fiil", tr:"utandırmak, mahcup etmek", ex:"The mistake seemed to ___ him in front of everyone."},
+  {en:"bearable", pos:"sıfat", tr:"katlanılabilir, dayanılır", ex:"The pain became ___ after the medicine."},
+  {en:"vicious", pos:"sıfat", tr:"azılı, vahşi, kötü niyetli", ex:"The dog gave a ___ growl."},
+  {en:"peel", pos:"fiil/isim", tr:"(kabuğunu) soymak; kabuk", ex:"She began to ___ the orange."},
+  {en:"absentmindedly", pos:"zarf", tr:"dalgın bir şekilde", ex:"He ___ left his keys on the table."},
+  {en:"sulk", pos:"fiil", tr:"somurtmak, küsmek", ex:"The child began to ___ after losing the game."},
+  {en:"immense", pos:"sıfat", tr:"muazzam, çok büyük", ex:"They live in an ___ house."},
+  {en:"bruise", pos:"isim/fiil", tr:"çürük, morartı; morartmak", ex:"She had a ___ on her arm."},
 ];
 
 let WORDS = [];
@@ -695,6 +716,28 @@ function renderStory(){
   document.getElementById('storyGen').onclick = generateStory;
 }
 
+// Sadece SM-2 zamanlama verisini sıfırlar (dogru/yanlis istatistiklerine dokunmaz).
+// Yanlış hesaplanmış eski "due" tarihlerini temizlemek için kullanılır.
+async function resetSrsSchedule(){
+  if(!confirm('Tüm kelimelerin tekrar zamanlamasını sıfırlamak istediğine emin misin? Doğru/yanlış istatistiklerin korunacak, sadece "ne zaman tekrar edileceği" bilgisi silinecek.')) return;
+  panel.innerHTML = `<div class="fc-pos">ZAMANLAMA SIFIRLANIYOR…</div><div style="text-align:center; padding:20px; font-size:24px;">⏳</div>`;
+  try{
+    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
+    const batch = db.batch();
+    snapshot.forEach(doc=>{
+      if(doc.data().sm2){
+        batch.update(doc.ref, { sm2: firebase.firestore.FieldValue.delete() });
+      }
+    });
+    await batch.commit();
+    srsLocalCache = {};
+    srsState = null;
+    renderSrs();
+  } catch(err){
+    panel.innerHTML = `<div class="fc-pos" style="color:var(--stamp-dark)">HATA</div><div class="fc-example">Sıfırlama sırasında hata oluştu: ${err.message}</div>`;
+  }
+}
+
 // ================= SRS (SM-2) TEKRAR MODU =================
 let srsState = null; // { queue:[{word, cardData}], index, flipped, correctCount }
 const SRS_NEW_LIMIT = 10; // günde en fazla bu kadar "hiç görülmemiş" kelime eklenir
@@ -726,7 +769,7 @@ async function newSrsRound(){
 function renderSrs(){
   if(!srsState){ newSrsRound(); return; }
   if(srsState.index >= srsState.queue.length){
-    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">TEKRAR TAMAMLANDI</div><div class="quiz-score">${srsState.correctCount} / ${srsState.queue.length}</div><div class="fc-example">${srsState.queue.length === 0 ? 'Bugün için tekrar edilecek kelime yok — harika gidiyorsun! 🎉' : 'Bir sonraki tekrarların, verdiğin cevaplara göre otomatik zamanlandı.'}</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="srsAgain">Listeyi Yenile</button></div></div>`;
+    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">TEKRAR TAMAMLANDI</div><div class="quiz-score">${srsState.correctCount} / ${srsState.queue.length}</div><div class="fc-example">${srsState.queue.length === 0 ? 'Bugün için tekrar edilecek kelime yok — harika gidiyorsun! 🎉' : 'Bir sonraki tekrarların, verdiğin cevaplara göre otomatik zamanlandı.'}</div><div class="fc-controls" style="margin-top:20px; gap:10px;"><button class="btn primary" id="srsAgain">Listeyi Yenile</button>${srsState.queue.length === 0 ? '<button class="btn" style="border-color:var(--kraft-light); color:var(--ink-soft);" onclick="resetSrsSchedule()">Zamanlama Yanlış Görünüyorsa Sıfırla</button>' : ''}</div></div>`;
     document.getElementById('srsAgain').onclick = ()=>{ srsState = null; renderSrs(); };
     return;
   }
@@ -734,6 +777,7 @@ function renderSrs(){
   const w = item.word;
   panel.innerHTML = `
     <div class="srs-meta"><span>KART ${srsState.index+1} / ${srsState.queue.length}</span><span>BUGÜN: ${srsState.dueTotal} tekrar · ${srsState.newTotal} yeni</span></div>
+    <div style="text-align:center; margin-bottom:10px;"><button class="btn" style="font-size:10px; padding:6px 10px; border-color:var(--kraft-light); color:var(--ink-soft);" onclick="resetSrsSchedule()">Zamanlamayı Sıfırla</button></div>
     <div class="srs-card">
       <div class="fc-pos">${w.pos}</div>
       <div class="srs-flip" id="srsFlip">
