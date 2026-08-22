@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kelime-kutusu-v4.5';
+const CACHE_NAME = 'kelime-kutusu-v4.6';
 const ASSETS = [
   'index.html',
   'manifest.json',
