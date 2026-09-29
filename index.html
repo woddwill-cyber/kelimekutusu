@@ -52,12 +52,6 @@
   .fc-example{ font-size:14px; color:var(--ink-soft); text-align:center; line-height:1.5; max-width:340px; margin:0 auto; }
   .fc-controls{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
-  .story-empty{ text-align:center; padding:36px 10px; max-width:460px; margin:0 auto; }
-  .story-meta{ display:flex; justify-content:space-between; align-items:center; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:18px; flex-wrap:wrap; gap:10px; }
-  .story-title{ font-size:26px; font-weight:700; font-style:italic; margin-bottom:16px; color:var(--stamp-dark); }
-  .story-body{ font-size:16px; line-height:1.75; color:var(--ink); }
-  .story-body p{ margin:0 0 16px; }
-  .story-word{ background:var(--sage-light); border-bottom:1.5px dotted var(--sage); padding:0 2px; border-radius:2px; font-weight:600; color:var(--sage); }
   
   button.btn{ font-family:'Space Mono',monospace; font-size:12px; letter-spacing:0.04em; padding:10px 18px; border-radius:5px; border:1.5px solid var(--kraft); background:var(--paper-dark); color:var(--ink); cursor:pointer; transition:transform .12s ease; }
   button.btn:hover{ transform:translateY(-1px); }
@@ -68,23 +62,6 @@
   .quiz-end{ text-align:center; padding:20px 10px; }
   .quiz-score{ font-size:46px; font-weight:700; color:var(--stamp); margin:10px 0;}
 
-  /* ---- SRS (SM-2) flashcard review ---- */
-  .srs-card{ text-align:center; padding:10px 0 6px; }
-  .srs-flip{ background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:10px; padding:38px 20px; min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s ease; }
-  .srs-flip:hover{ border-color:var(--kraft); }
-  .srs-back{ margin-top:14px; padding-top:14px; border-top:1.5px dashed var(--kraft-light); width:100%; }
-  .srs-tr{ font-size:20px; font-style:italic; color:var(--sage); font-weight:600; margin-bottom:6px; }
-  .srs-hint{ font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft); text-transform:uppercase; letter-spacing:.06em; margin-top:10px; }
-  .rate-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:20px; }
-  .rate-btn{ font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.03em; padding:12px 6px; border-radius:6px; border:1.5px solid; cursor:pointer; text-transform:uppercase; line-height:1.4; }
-  .rate-btn .sub{ display:block; font-size:9px; opacity:.7; margin-top:2px; }
-  .rate-forgot{ background:#FBE4DC; border-color:var(--stamp); color:var(--stamp-dark); }
-  .rate-hard{ background:#FBEFD8; border-color:#B98A2E; color:#8A6420; }
-  .rate-good{ background:var(--sage-light); border-color:var(--sage); color:var(--sage); }
-  .rate-easy{ background:#DCEBEA; border-color:#3F8F87; color:#2C6B64; }
-  .rate-btn:hover{ transform:translateY(-1px); }
-  .srs-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:16px; }
-  .srs-empty{ text-align:center; padding:40px 10px; }
 
   /* ---- Streak badge + Stats panel ---- */
   .streak-badge{ display:inline-flex; align-items:center; gap:6px; font-family:'Space Mono',monospace; font-size:13px; font-weight:700; color:var(--stamp-dark); background:var(--card); border:1.5px solid var(--kraft-light); border-radius:20px; padding:6px 14px; margin:4px 0 18px; }
@@ -140,9 +117,7 @@
   </header>
 
   <nav class="tabs" id="tabs">
-    <button data-tab="story" class="active">Hikaye</button>
-    <button data-tab="srs">Tekrar</button>
-    <button data-tab="type">Yazma</button>
+    <button data-tab="type" class="active">Yazma</button>
     <button data-tab="focusedType" style="color: var(--sage); border-bottom-color: var(--sage);">Odaklı Yazma</button>
     <button data-tab="hard">Zorlu Kelimeler</button>
     <button data-tab="stats">İstatistik</button>
@@ -186,11 +161,7 @@ function updateCloudStats(en, success) {
   }).catch(err => console.log("Bulut kaydı hatası:", err));
 }
 
-// ============ SM-2 ARALIKLI TEKRAR (SPACED REPETITION) ============
-// SM-2 algoritmasının klasik tanımına göre: her tekrarda kullanıcı 0-5 arası
-// bir "kalite" puanı verir (0-2: unutuldu, 3: zor ama hatırlandı, 4: iyi, 5: kolay).
-// Bu puana göre bir sonraki tekrar aralığı (interval) ve kolaylık faktörü (ease factor)
-// yeniden hesaplanır ve kelimenin bir sonraki gösterim tarihi (due) belirlenir.
+// ============ TARİH YARDIMCILARI ============
 function todayStr(){
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -202,49 +173,18 @@ function addDays(dateStr, n){
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
-function sm2Next(card, quality){
-  // card: { reps, ef, interval } — yoksa varsayılan değerler kullanılır
-  let reps = card.reps || 0;
-  let ef = card.ef || 2.5;
-  let interval = card.interval || 0;
-
-  if(quality < 3){
-    reps = 0;
-    interval = 1;
-  } else {
-    if(reps === 0) interval = 1;
-    else if(reps === 1) interval = 6;
-    else interval = Math.round(interval * ef);
-    reps += 1;
-  }
-
-  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  if(ef < 1.3) ef = 1.3;
-
-  return { reps, ef: Math.round(ef*100)/100, interval, due: addDays(todayStr(), interval), last: todayStr() };
+// Bir kelimenin "biliniyor olma olasılığı" tahmini.
+// Ham oran yerine yumuşatılmış oran kullanılır: (doğru + 1) / (doğru + yanlış + 2)
+// Örnek: 30 doğru / 10 yanlış -> ~0.74 (iyi biliniyor), 0 doğru / 5 yanlış -> ~0.14 (çok zayıf)
+function knowledgeScore(dogru, yanlis){
+  return (dogru + 1) / (dogru + yanlis + 2);
 }
 
-// Bulut yazması tamamlanmadan aynı oturumda tekrar okuma yapılırsa (ör. "Listeyi Yenile"ye
-// hemen basmak) eski veri gelmesin diye, en son yazılan sm2 değerlerini burada da tutuyoruz.
-let srsLocalCache = {};
-
-// Bir kelimenin SM-2 durumunu buluta kaydeder
-async function saveSm2(en, sm2){
-  srsLocalCache[en] = { ...(srsLocalCache[en]||{}), en, sm2 };
-  const docRef = db.collection('userStats').doc(userCode).collection('words').doc(en);
-  try{ await docRef.set({ en, sm2 }, { merge: true }); }
-  catch(err){ console.log('SM-2 kayıt hatası:', err); }
-}
-
-// Tüm kelimelerin buluttaki durumunu (dogru/yanlis + sm2) çeker.
-// Henüz buluta yazılmamış olabilecek en güncel değerleri yerel önbellekten üzerine yazar.
+// Tüm kelimelerin buluttaki durumunu (dogru/yanlis) çeker.
 async function fetchAllWordStats(){
   const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
   const map = {};
   snapshot.forEach(doc => { map[doc.id] = doc.data(); });
-  Object.keys(srsLocalCache).forEach(en => {
-    map[en] = { ...(map[en]||{}), ...srsLocalCache[en] };
-  });
   return map;
 }
 
@@ -561,8 +501,6 @@ function selectNewSet() {
   mastery = {};
   WORDS.forEach(w => mastery[w.en] = 'new');
 
-  storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
-  srsState = null;
   typeState = null;
 
   renderProgress();
@@ -604,9 +542,7 @@ tabsNav.addEventListener('click', e=>{
 });
 
 function render(tab){
-  if(tab === 'story') renderStory();
-  else if(tab === 'srs') renderSrs();
-  else if(tab === 'type') renderType();
+  if(tab === 'type') renderType();
   else if(tab === 'hard') renderHardWords(); // YENİ BULUT SEKME
   else if(tab === 'focusedType') renderFocusedType();
   else if(tab === 'stats') renderStats();
@@ -685,24 +621,20 @@ async function resetCloudStats() {
 }
 // ================= İSTATİSTİK PANELİ =================
 async function renderStats(){
-  panel.innerHTML = `<div class="srs-empty"><div class="fc-pos">İSTATİSTİKLER YÜKLENİYOR…</div><div style="font-size:24px;margin-top:14px;">⏳</div></div>`;
+  panel.innerHTML = `<div style="text-align:center; padding:40px 10px;"><div class="fc-pos">İSTATİSTİKLER YÜKLENİYOR…</div><div style="font-size:24px;margin-top:14px;">⏳</div></div>`;
   let allStats = {};
   try{ allStats = await fetchAllWordStats(); }
   catch(err){ /* buluta erişilemezse yine de genel serileri gösterebiliriz */ }
 
   const today = todayStr();
-  let known = 0, learning = 0, seen = 0, dueToday = 0;
+  let known = 0, learning = 0, seen = 0;
   ALL_WORDS.forEach(w=>{
     const s = allStats[w.en];
     if(!s){ return; }
+    const d = s.dogru || 0, y = s.yanlis || 0;
+    if(d + y === 0){ return; }
     seen++;
-    const sm2 = s.sm2;
-    if(sm2){
-      if(sm2.reps >= 2) known++; else learning++;
-      if(sm2.due && sm2.due <= today) dueToday++;
-    } else if((s.dogru||0) > 0){
-      learning++;
-    }
+    if(d + y >= 3 && knowledgeScore(d, y) >= 0.7) known++; else learning++;
   });
   const untouched = Math.max(ALL_WORDS.length - seen, 0);
 
@@ -732,201 +664,7 @@ async function renderStats(){
       <span><i class="legend-dot" style="background:var(--paper); border:1px solid var(--kraft-light);"></i>Hiç görülmedi: ${untouched}</span>
     </div>
 
-    <div class="fc-example" style="text-align:center; margin-top:10px;">
-      ${dueToday > 0 ? `Bugün <b>${dueToday}</b> kelimenin tekrar zamanı geldi — "Tekrar" sekmesinden pratik yapabilirsin.` : 'Bugün için bekleyen bir tekrar yok, harika gidiyorsun! 🎉'}
-    </div>
   `;
-}
-
-// ================= STORY =================
-let storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
-
-const STORY_SETTINGS = [ "a small coastal fishing town","a busy hospital ward at night","a quiet mountain village","an old university library","a rainy city office" ];
-const STORY_CHARACTERS = [ "a nervous young teacher","two arguing siblings","a retired sailor","a shy new student","a tired night-shift nurse" ];
-
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function highlightStory(text){
-  const sorted = WORDS.slice().sort((a,b)=> b.en.length - a.en.length);
-  const alternation = sorted.map(w => w.en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
-  const regex = new RegExp('\\b(' + alternation + ')[a-zA-Z]*\\b', 'gi');
-  const used = new Set();
-  const escaped = escapeHtml(text);
-  const highlighted = escaped.replace(regex, (match) => {
-    const lower = match.toLowerCase();
-    const w = sorted.find(x => lower.startsWith(x.en.toLowerCase()));
-    if(!w) return match;
-    used.add(w.en);
-    return `<span class="story-word" title="${w.tr} · ${w.pos}">${match}</span>`;
-  });
-  return { html: highlighted, used: [...used] };
-}
-
-async function generateStory(){
-  storyState.loading = true;
-  storyState.error = null;
-  renderStory();
-
-  const setting = pick(STORY_SETTINGS);
-  const character = pick(STORY_CHARACTERS);
-  const wordList = WORDS.map(w=>w.en).join(', ');
-
-  const prompt = `Write a short, engaging, ORIGINAL English story at CEFR B1 level (roughly 180-260 words).
-Setting inspiration: ${setting}. Main character(s) inspiration: ${character}. Feel free to adapt these loosely.
-Naturally use as many of the following words as possible (any grammatical form: plural, past tense, -ing, adverb form, etc. are all fine): ${wordList}.
-Do not force every single word in if it breaks natural flow, but try hard to include most of them.
-Write plain prose only: no markdown, no bullet points, no asterisks, no word list, no explanation.
-First line: a short title (no more than 6 words). Then a blank line. Then the story itself, in 2-4 paragraphs.`;
-
-  const geminiApiKey = "BURAYA_YENI_GEMINI_ANAHTARINI_YAZIN"; // Google AI Studio'dan aldığın anahtarı buraya gir!
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
-
-  try{
-    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || 'API Hatası');
-
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    if(!raw) throw new Error('empty');
-
-    const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l.length);
-    const title = lines[0];
-    const body = lines.slice(1).join('\n\n');
-
-    const { html, used } = highlightStory(body);
-    storyState = { text: html, title, loading:false, error:null, usedWords: used };
-  } catch(err){
-    storyState = { text:null, title:null, loading:false, error:'Hikaye oluşturulamadı: ' + err.message, usedWords:[] };
-  }
-  renderStory();
-}
-
-function renderStory(){
-  if(storyState.loading){
-    panel.innerHTML = `<div class="story-empty"><div class="fc-pos">HİKAYE YAZILIYOR</div><div class="fc-word" style="font-size:22px;">Kelimelerin geçtiği eşsiz bir B1 hikaye hazırlanıyor…</div></div>`;
-    return;
-  }
-  if(storyState.error){
-    panel.innerHTML = `<div class="story-empty"><div class="fc-pos" style="color:var(--stamp-dark);">HATA</div><div class="fc-example">${storyState.error}</div><div class="fc-controls" style="margin-top:18px;"><button class="btn primary" id="storyGen">Tekrar Dene</button></div></div>`;
-    document.getElementById('storyGen').onclick = generateStory;
-    return;
-  }
-  if(!storyState.text){
-    panel.innerHTML = `<div class="story-empty"><div class="fc-pos">HER TIKLAMADA YENİ BİR HİKAYE</div><div class="fc-word" style="font-size:24px;">Kelime listesini kullanan bir B1 hikayesi okumaya hazır mısın?</div><div class="fc-example" style="margin-top:6px;">Hikayede geçen ${WORDS.length} kelimeden biri, altı çizili olarak vurgulanır — üzerine gelince Türkçesini görürsün.</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="storyGen">Hikaye Oluştur</button></div></div>`;
-    document.getElementById('storyGen').onclick = generateStory;
-    return;
-  }
-  const usedCount = storyState.usedWords.length;
-  panel.innerHTML = `
-    <div class="story-meta"><span>KULLANILAN KELİME: ${usedCount} / ${WORDS.length}</span><button class="btn stamp" id="storyGen">Yeni Hikaye Oluştur</button></div>
-    <div class="story-title">${storyState.title || ''}</div>
-    <div class="story-body">${storyState.text.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>
-  `;
-  document.getElementById('storyGen').onclick = generateStory;
-}
-
-// Sadece SM-2 zamanlama verisini sıfırlar (dogru/yanlis istatistiklerine dokunmaz).
-// Yanlış hesaplanmış eski "due" tarihlerini temizlemek için kullanılır.
-async function resetSrsSchedule(){
-  if(!confirm('Tüm kelimelerin tekrar zamanlamasını sıfırlamak istediğine emin misin? Doğru/yanlış istatistiklerin korunacak, sadece "ne zaman tekrar edileceği" bilgisi silinecek.')) return;
-  panel.innerHTML = `<div class="fc-pos">ZAMANLAMA SIFIRLANIYOR…</div><div style="text-align:center; padding:20px; font-size:24px;">⏳</div>`;
-  try{
-    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
-    const batch = db.batch();
-    snapshot.forEach(doc=>{
-      if(doc.data().sm2){
-        batch.update(doc.ref, { sm2: firebase.firestore.FieldValue.delete() });
-      }
-    });
-    await batch.commit();
-    srsLocalCache = {};
-    srsState = null;
-    renderSrs();
-  } catch(err){
-    panel.innerHTML = `<div class="fc-pos" style="color:var(--stamp-dark)">HATA</div><div class="fc-example">Sıfırlama sırasında hata oluştu: ${err.message}</div>`;
-  }
-}
-
-// ================= SRS (SM-2) TEKRAR MODU =================
-let srsState = null; // { queue:[{word, cardData}], index, flipped, correctCount }
-const SRS_NEW_LIMIT = 10; // günde en fazla bu kadar "hiç görülmemiş" kelime eklenir
-
-async function newSrsRound(){
-  panel.innerHTML = `<div class="srs-empty"><div class="fc-pos">TEKRAR LİSTESİ HAZIRLANIYOR…</div><div style="font-size:24px;margin-top:14px;">⏳</div></div>`;
-  let allStats = {};
-  try{ allStats = await fetchAllWordStats(); }
-  catch(err){
-    panel.innerHTML = `<div class="srs-empty"><div class="fc-pos" style="color:var(--stamp-dark)">HATA</div><div class="fc-example">Bulut verisi çekilemedi. İnternet bağlantını kontrol et.</div></div>`;
-    return;
-  }
-  const today = todayStr();
-  const due = [], fresh = [];
-  ALL_WORDS.forEach(w=>{
-    const s = allStats[w.en];
-    const sm2 = s && s.sm2;
-    if(sm2 && sm2.due){
-      if(sm2.due <= today) due.push({ word: w, sm2 });
-    } else {
-      fresh.push({ word: w, sm2: null });
-    }
-  });
-  const queue = shuffle(due).concat(shuffle(fresh).slice(0, SRS_NEW_LIMIT));
-  srsState = { queue, index: 0, flipped: false, correctCount: 0, dueTotal: due.length, newTotal: Math.min(fresh.length, SRS_NEW_LIMIT) };
-  renderSrs();
-}
-
-function renderSrs(){
-  if(!srsState){ newSrsRound(); return; }
-  if(srsState.index >= srsState.queue.length){
-    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">TEKRAR TAMAMLANDI</div><div class="quiz-score">${srsState.correctCount} / ${srsState.queue.length}</div><div class="fc-example">${srsState.queue.length === 0 ? 'Bugün için tekrar edilecek kelime yok — harika gidiyorsun! 🎉' : 'Bir sonraki tekrarların, verdiğin cevaplara göre otomatik zamanlandı.'}</div><div class="fc-controls" style="margin-top:20px; gap:10px;"><button class="btn primary" id="srsAgain">Listeyi Yenile</button>${srsState.queue.length === 0 ? '<button class="btn" style="border-color:var(--kraft-light); color:var(--ink-soft);" onclick="resetSrsSchedule()">Zamanlama Yanlış Görünüyorsa Sıfırla</button>' : ''}</div></div>`;
-    document.getElementById('srsAgain').onclick = ()=>{ srsState = null; renderSrs(); };
-    return;
-  }
-  const item = srsState.queue[srsState.index];
-  const w = item.word;
-  panel.innerHTML = `
-    <div class="srs-meta"><span>KART ${srsState.index+1} / ${srsState.queue.length}</span><span>BUGÜN: ${srsState.dueTotal} tekrar · ${srsState.newTotal} yeni</span></div>
-    <div style="text-align:center; margin-bottom:10px;"><button class="btn" style="font-size:10px; padding:6px 10px; border-color:var(--kraft-light); color:var(--ink-soft);" onclick="resetSrsSchedule()">Zamanlamayı Sıfırla</button></div>
-    <div class="srs-card">
-      <div class="fc-pos">${w.pos}</div>
-      <div class="srs-flip" id="srsFlip">
-        <div class="fc-word">${w.en}</div>
-        ${srsState.flipped ? `
-          <div class="srs-back">
-            <div class="srs-tr">${w.tr}</div>
-            <div class="fc-example">${w.ex.replace('___', w.en)}</div>
-          </div>
-        ` : `<div class="srs-hint">Anlamı görmek için tıkla</div>`}
-      </div>
-      ${srsState.flipped ? `
-        <div class="rate-row">
-          <button class="rate-btn rate-forgot" data-q="1">Unuttum<span class="sub">tekrar bugün</span></button>
-          <button class="rate-btn rate-hard" data-q="3">Zor<span class="sub">kısa aralık</span></button>
-          <button class="rate-btn rate-good" data-q="4">İyi<span class="sub">normal aralık</span></button>
-          <button class="rate-btn rate-easy" data-q="5">Kolay<span class="sub">uzun aralık</span></button>
-        </div>
-      ` : ''}
-    </div>
-  `;
-  if(!srsState.flipped){
-    document.getElementById('srsFlip').onclick = ()=>{ srsState.flipped = true; renderSrs(); };
-  } else {
-    document.querySelectorAll('.rate-btn').forEach(b=>{
-      b.onclick = ()=> handleSrsRating(w, item.sm2, parseInt(b.dataset.q, 10));
-    });
-  }
-}
-
-async function handleSrsRating(w, prevSm2, quality){
-  const next = sm2Next(prevSm2 || {}, quality);
-  await saveSm2(w.en, next);
-  const success = quality >= 3;
-  if(success) srsState.correctCount++;
-  bumpMastery(w.en, success); // ilerleme noktalarını ve seriyi de günceller
-  srsState.index++;
-  srsState.flipped = false;
-  renderSrs();
 }
 
 // ================= TYPING =================
@@ -988,8 +726,6 @@ function selectAllWords() {
   mastery = {};
   WORDS.forEach(w => mastery[w.en] = 'new');
 
-  storyState = { text:null, title:null, loading:false, error:null, usedWords:[] };
-  srsState = null;
   typeState = null;
 
   // Ekranı yeni duruma göre çiz
@@ -998,54 +734,53 @@ function selectAllWords() {
   if(aktifTab) render(aktifTab.dataset.tab);
 }
 
-// 🎯 Odaklı Yazma Fonksiyonu
+// 🎯 Odaklı Yazma: bilme olasılığı en düşük 20 kelime
+const FOCUS_COUNT = 20;
+
 async function renderFocusedType() {
-  // Veriler gelene kadar ekrana yükleme animasyonu çiz
   panel.innerHTML = `
-    <div class="fc-pos">BULUTTAN EN ÇOK HATA YAPTIĞIN KELİMELER ANALİZ EDİLİYOR...</div>
+    <div class="fc-pos">BULUTTAKİ DOĞRU/YANLIŞ GEÇMİŞİN ANALİZ EDİLİYOR...</div>
     <div style="text-align:center; padding:20px; font-size:24px;">⏳</div>
   `;
-  
+
   try {
-    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
-    let stats = [];
-    
-    snapshot.forEach(doc => {
-      let data = doc.data();
-      let wordObj = ALL_WORDS.find(w => w.en === data.en);
-      if(wordObj && data.yanlis > 0) {
-        stats.push({ ...wordObj, yanlis: data.yanlis });
-      }
+    const stats = await fetchAllWordStats();
+    const attempted = [], unseen = [];
+
+    ALL_WORDS.forEach(w => {
+      const s = stats[w.en];
+      const d = s ? (s.dogru || 0) : 0;
+      const y = s ? (s.yanlis || 0) : 0;
+      if (d + y > 0) attempted.push({ ...w, dogru: d, yanlis: y, score: knowledgeScore(d, y) });
+      else unseen.push(w);
     });
-    
-    // Eğer hiç yanlış yapılan kelime yoksa tatlı bir mesaj göster
-    if (stats.length === 0) {
-      panel.innerHTML = `
-        <div class="fc-pos" style="color:var(--sage);">HARİKA HABER!</div>
-        <div class="fc-example" style="margin-top:20px;">Bulutta henüz hiç hatalı kelimen yok. Normal yazma alıştırmasına veya diğer modlara geçebilirsin! 🎉</div>
-      `;
+
+    // En düşük skor = en az bilinen. Eşitlikte daha çok denenmiş (daha güvenilir) olan öne geçer.
+    attempted.sort((a, b) => (a.score - b.score) || ((b.dogru + b.yanlis) - (a.dogru + a.yanlis)));
+
+    let picked = attempted.slice(0, FOCUS_COUNT);
+    // Denenmiş kelime 20'den azsa, hiç görülmemiş kelimelerle tamamla
+    if (picked.length < FOCUS_COUNT) {
+      picked = picked.concat(shuffle(unseen).slice(0, FOCUS_COUNT - picked.length));
+    }
+
+    if (picked.length === 0) {
+      panel.innerHTML = `<div class="fc-example" style="margin-top:20px;">Kelime havuzu boş görünüyor.</div>`;
       return;
     }
-    
-    // En çok hata yapılanları sırala ve ilk 10'unu al
-    stats.sort((a,b) => b.yanlis - a.yanlis);
-    const top10 = stats.slice(0, 10);
-    
-    // Kelime havuzunu geçici olarak bu 10 kelimeyle sınırla ve karıştır
-    WORDS = shuffle(top10);
-    
-    // Üst bilgileri güncelle
+
+    WORDS = shuffle(picked);
+
     document.getElementById('eyebrowLabel').textContent = WORDS.length + ' odaklı kart · sözcük çekmecesi';
-    document.getElementById('subLabel').textContent = '🎯 En çok zorlandığın ' + WORDS.length + ' kelimeyi yazarak hafızaya kazı.';
-    
+    document.getElementById('subLabel').textContent = '🎯 En az bildiğin ' + WORDS.length + ' kelimeyi yazarak hafızaya kazı.';
+
     mastery = {};
     WORDS.forEach(w => mastery[w.en] = 'new');
     renderProgress();
-    
-    // Yazma alıştırmasının state'ini sıfırla ve asıl yazma ekranını çiz
-    typeState = null; 
+
+    typeState = null;
     renderType();
-    
+
   } catch (error) {
     console.error(error);
     panel.innerHTML = `<div class="fc-pos" style="color:var(--stamp-dark)">HATA OLUŞTU</div><div class="fc-example">Veriler çekilemedi. İnternet bağlantını kontrol et.</div>`;
