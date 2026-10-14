@@ -1,797 +1,647 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<title>Kelime Kutusu</title>
-<link rel="manifest" href="manifest.json">
-<!-- Firebase Kütüphaneler -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kutu Hesaplama</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-  :root{
-    --paper:#F6EFDE; --paper-dark:#EAE0C7; --card:#FBF6EA;
-    --ink:#2B3A4A; --ink-soft:#5B6B7A; --kraft:#8B6F47;
-    --kraft-light:#D8C6A3; --stamp:#C1502E; --stamp-dark:#9C3D22;
-    --sage:#5E7A4F; --sage-light:#E1E9D6;
-    --line: rgba(43,58,74,0.16);
-    --shadow: 0 6px 16px rgba(43,58,74,0.12), 0 1px 3px rgba(43,58,74,0.08);
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background: radial-gradient(circle at 1px 1px, rgba(43,58,74,0.05) 1px, transparent 0) 0 0/22px 22px, var(--paper);
-    color:var(--ink); font-family:'Fraunces', Georgia, serif;
-    min-height:100vh; padding:28px 16px 60px;
-  }
-  .mono{ font-family:'Space Mono', monospace; letter-spacing:0.02em; }
-  .wrap{ max-width:760px; margin:0 auto; }
+/* Layout: telefon için tek sütun. Üstte sabit tip seçimi, ortada girdiler, altta sonuç kartları. */
+:root{
+  --bg:#edf3f3; --surface:#ffffff; --ink:#15222a; --muted:#566a72; --line:#d2dfe0;
+  --accent:#00776e; --accent-ink:#ffffff; --accent-soft:#d6eeec; --good:#12703c;
+  --teal:#00a99f; --logo-ink:#231f20; --deco:#00a99f;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1416; --surface:#132124; --ink:#e6f0f0; --muted:#8fa7ab; --line:#24393d;
+  --accent:#2fc0b4; --accent-ink:#03201d; --accent-soft:#11302f; --good:#4cc98a;
+  --teal:#1fc2b6; --logo-ink:#eef5f5; --deco:#2fc0b4; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1416; --surface:#132124; --ink:#e6f0f0; --muted:#8fa7ab; --line:#24393d;
+  --accent:#2fc0b4; --accent-ink:#03201d; --accent-soft:#11302f; --good:#4cc98a;
+  --teal:#1fc2b6; --logo-ink:#eef5f5; --deco:#2fc0b4; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--font-body);padding-inline:16px;padding-block:14px 40px;-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.deco-wide{display:none}
+.deco{position:fixed;inset:0;width:100%;height:100%;z-index:-1;color:var(--deco);opacity:.1;pointer-events:none}
+header.brand{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 16px 14px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+.logo{width:min(260px,74%);position:relative;z-index:1}
+.logo svg{display:block;width:100%;height:auto}
+.li{fill:var(--logo-ink)}
+.lt{fill:var(--teal)}
+.hdeco{position:absolute;right:-10px;top:-14px;width:150px;height:auto;color:var(--deco);opacity:.16;pointer-events:none}
+.flute{color:var(--teal);position:relative;z-index:1}
+.flute svg{display:block;width:100%;height:14px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+h1{font:700 27px/1 "Cormorant Garamond",Georgia,"Times New Roman",serif;margin:0;letter-spacing:.01em}
+.reset{background:none;border:0;color:var(--accent);font:inherit;font-weight:500;padding:8px 0;cursor:pointer}
+.acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.hide{background:var(--surface);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:13px;font-weight:500;padding:6px 10px;border-radius:999px;cursor:pointer}
+.hide[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.hide:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.masked{-webkit-text-security:disc;text-security:disc}
+.seg{display:grid;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px}
+.seg.two{grid-template-columns:1fr 1fr}
+.seg.five{grid-template-columns:repeat(5,1fr)}
+.seg button{border:0;background:none;color:var(--ink);font:inherit;font-weight:500;padding:11px 4px;border-radius:7px;cursor:pointer;min-width:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.group h2{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.row{display:grid;gap:8px}
+.row.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.row.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.row.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+label small{font-size:10.5px;color:var(--accent);font-weight:500}
+input{width:100%;font:500 17px var(--font-num);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 8px;min-width:0;text-align:right}
+.result{display:flex;flex-direction:column;gap:10px}
+.hero{background:var(--accent);color:var(--accent-ink);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative;overflow:hidden}
+.hero>div{position:relative;z-index:1}
+.hero.one{grid-template-columns:1fr}
+.hbox{position:absolute;right:-8px;bottom:-16px;width:120px;height:auto;color:var(--accent-ink);opacity:.16;pointer-events:none}
+.hero div{min-width:0}
+.hero span{display:block;font-size:12px;opacity:.85}
+.hero b{font:600 24px var(--font-num);display:block;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.hero i{font-style:normal;font-size:12px;opacity:.85}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:2px 14px}
+.list dl{margin:0}
+.list .it{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list .it:last-child{border-bottom:0}
+.list dt{color:var(--muted);font-size:13.5px;min-width:0}
+.list dd{margin:0;font:500 16px var(--font-num);font-variant-numeric:tabular-nums;text-align:right}
+.list dd u{text-decoration:none;font:400 12px var(--font-body);color:var(--muted);margin-left:4px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 14px}
+summary{padding:13px 0;font-weight:500;cursor:pointer}
+details .row{padding-bottom:14px}
+.note{font-size:12px;color:var(--muted);margin:0}
+.group .note{margin-top:8px}
+select{width:100%;font:500 16px var(--font-num);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 8px;min-width:0}
+select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg.four{grid-template-columns:repeat(4,1fr);background:var(--bg)}
+.seg.tiers{grid-template-columns:repeat(3,1fr);background:var(--bg)}
+.seg.tiers button{font-size:14px}
 
-  header{ text-align:center; margin-bottom:22px; }
-  .eyebrow{ font-family:'Space Mono', monospace; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--kraft); margin-bottom:6px; }
-  h1{ font-size:clamp(30px, 6vw, 42px); font-weight:700; margin:0 0 6px; font-style:italic; }
-  .sub{ color:var(--ink-soft); font-size:15px; margin-bottom:18px; }
+@media (min-width:900px){
+  body{padding-block:28px 56px}
+  .deco:not(.deco-wide){display:none}
+  .deco-wide{display:block}
+  .wrap{max-width:1040px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;row-gap:14px;align-items:start}
+  header.brand{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;padding:20px 24px}
+  header.brand .logo{width:300px}
+  header.brand .bar{flex:0 1 auto;justify-content:flex-end;gap:18px}
+  .hdeco{right:auto;left:42%;top:-18px;width:170px}
+  h1{font-size:32px}
+  .wrap>.seg,.wrap>.panel,.wrap>details{grid-column:1}
+  #result{grid-column:2;grid-row:2 / span 5;position:sticky;top:20px}
+  .wrap>.note{grid-column:1/-1}
+  .hero b{font-size:30px}
+  .hbox{width:150px}
+  .list dd{font-size:17px}
+}
 
-  .progress-rail{ display:flex; justify-content:center; gap:4px; flex-wrap:wrap; margin:0 auto 26px; max-width:620px; }
-  .dot{ width:13px;height:17px; background:var(--card); border:1px solid var(--kraft-light); border-radius:2px; position:relative; transition:all .25s ease; }
-  .dot::before{ content:''; position:absolute; top:3px; left:2px; right:2px; height:1px; background:var(--line); box-shadow:0 3px 0 var(--line); }
-  .dot.learning{ background:var(--kraft-light); border-color:var(--kraft); }
-  .dot.known{ background:var(--sage); border-color:var(--sage); }
-  .dot.known::before{ display:none; }
-
-  nav.tabs{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:22px; }
-  nav.tabs button{ font-family:'Space Mono', monospace; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-bottom:none; color:var(--ink-soft); padding:10px 16px 8px; cursor:pointer; border-radius:6px 6px 0 0; position:relative; top:1px; }
-  nav.tabs button.active{ background:var(--card); color:var(--stamp-dark); border-color:var(--kraft); box-shadow: 0 -3px 8px rgba(43,58,74,0.06); }
-
-  .panel{ background:var(--card); border:1.5px solid var(--kraft); border-radius:0 8px 8px 8px; padding:28px 24px; box-shadow:var(--shadow); min-height:380px; }
-  .fc-pos{ font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; text-align:center;}
-  .fc-word{ font-size:34px; font-weight:700; margin-bottom:6px; text-align:center; }
-  .fc-example{ font-size:14px; color:var(--ink-soft); text-align:center; line-height:1.5; max-width:340px; margin:0 auto; }
-  .fc-controls{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
-
-  
-  button.btn{ font-family:'Space Mono',monospace; font-size:12px; letter-spacing:0.04em; padding:10px 18px; border-radius:5px; border:1.5px solid var(--kraft); background:var(--paper-dark); color:var(--ink); cursor:pointer; transition:transform .12s ease; }
-  button.btn:hover{ transform:translateY(-1px); }
-  button.btn.primary{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
-  button.btn.stamp{ background:var(--stamp); color:#fff; border-color:var(--stamp-dark); }
-  button.btn:disabled{ opacity:.4; cursor:default; }
-
-  .quiz-end{ text-align:center; padding:20px 10px; }
-  .quiz-score{ font-size:46px; font-weight:700; color:var(--stamp); margin:10px 0;}
-
-
-  /* ---- Streak badge + Stats panel ---- */
-  .streak-badge{ display:inline-flex; align-items:center; gap:6px; font-family:'Space Mono',monospace; font-size:13px; font-weight:700; color:var(--stamp-dark); background:var(--card); border:1.5px solid var(--kraft-light); border-radius:20px; padding:6px 14px; margin:4px 0 18px; }
-  .stat-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:18px; }
-  @media (max-width:480px){ .stat-grid{ grid-template-columns:1fr 1fr; } }
-  .stat-card{ background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:8px; padding:16px 14px; text-align:center; }
-  .stat-num{ font-size:30px; font-weight:700; color:var(--stamp-dark); font-family:'Fraunces', serif; }
-  .stat-label{ font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:4px; }
-  .mastery-bar-wrap{ background:var(--paper-dark); border:1.5px solid var(--kraft-light); border-radius:8px; height:22px; overflow:hidden; display:flex; margin-bottom:6px; }
-  .mastery-bar-wrap div{ height:100%; }
-  .mastery-legend{ display:flex; gap:16px; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:var(--ink-soft); margin-bottom:18px; flex-wrap:wrap; }
-  .mastery-legend span{ display:inline-flex; align-items:center; gap:5px; }
-  .legend-dot{ width:10px; height:10px; border-radius:2px; display:inline-block; }
-
-  .type-prompt{ text-align:center; margin-bottom:18px; }
-  .type-tr{ font-size:26px; font-style:italic; color:var(--sage); margin-bottom:8px; }
-  .type-example{ font-size:14px; color:var(--ink-soft); margin-bottom:4px; }
-  .type-blank{ font-family:'Space Mono',monospace; font-weight:700; color:var(--stamp); }
-  .type-row{ display:flex; gap:8px; justify-content:center; margin:18px 0 8px; flex-wrap:wrap; }
-  input.type-input{ font-family:'Space Mono',monospace; font-size:16px; padding:12px 14px; border-radius:6px; border:1.5px solid var(--kraft); background:var(--paper); color:var(--ink); width:220px; text-align:center; }
-  input.type-input:focus{ outline:none; border-color:var(--stamp); }
-  input.type-input.correct{ border-color:var(--sage); background:var(--sage-light); }
-  input.type-input.incorrect{ border-color:var(--stamp); background:#FBE4DC; }
-  .type-feedback{ text-align:center; font-family:'Space Mono',monospace; font-size:12px; min-height:18px; margin-bottom:8px; color:var(--ink-soft);}
-  .type-meta{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:16px; }
-
-  .review-section{ margin-top:26px; border-top:1.5px dashed var(--kraft-light); padding-top:18px; }
-  .review-title{ font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--stamp-dark); text-align:center; margin-bottom:14px; }
-  .review-row{ display:grid; grid-template-columns:110px 1fr 80px 80px; gap:4px 14px; align-items:center; background:#FBE4DC; border:1px solid var(--stamp); border-radius:6px; padding:10px 12px; margin-bottom:8px; }
-  .review-en{ font-weight:700; font-size:16px; color:var(--stamp-dark); }
-  .review-tr{ font-style:italic; color:var(--ink); font-size:14px; }
-  .stat-wrong{ font-family:'Space Mono'; font-size:12px; color:var(--stamp-dark); font-weight:bold; }
-  .stat-correct{ font-family:'Space Mono'; font-size:12px; color:var(--sage); font-weight:bold; }
-  @media (max-width:480px){ .review-row{ grid-template-columns:1fr; text-align:center;} }
-
-  footer{ text-align:center; margin-top:22px; font-family:'Space Mono',monospace; font-size:11px; color:var(--kraft-light); }
+.btn{width:100%;border:0;background:var(--accent);color:var(--accent-ink);font:600 16px var(--font-body);padding:14px 16px;border-radius:10px;cursor:pointer}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);font-weight:500;font-size:14px;padding:10px 12px}
+#offer{position:fixed;inset:0;z-index:50;background:rgba(5,15,18,.6);overflow-y:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px max(24px,env(safe-area-inset-bottom,0px))}
+.ov-card{max-width:820px;margin:0 auto;background:var(--bg);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.ov-bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ov-bar h2{margin:0;font:700 24px/1 "Cormorant Garamond",Georgia,serif}
+.offer-form{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.offer-form input{text-align:left;font:500 16px var(--font-body)}
+.offer-form input.num{text-align:right;font-family:var(--font-num)}
+.offer-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.offer-actions a.btn{display:block;text-align:center;text-decoration:none;box-sizing:border-box}
+.msg{font-size:13px;color:var(--good);min-height:1.2em;margin:0}
+.paper{background:#fff;color:#1b1b1b;border:1px solid #cfd8da;border-radius:6px;padding:22px 20px;font:13px/1.45 var(--font-body);display:flex;flex-direction:column;gap:16px;--logo-ink:#231f20;--teal:#00a99f}
+.p-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.p-logo{width:290px;max-width:54%;flex:none}
+.p-logo svg{display:block;width:100%;height:auto}
+.p-h{font:700 clamp(26px,7.6vw,40px)/.95 "Cormorant Garamond",Georgia,serif;letter-spacing:.04em;color:#00776e;text-align:right}
+.p-date{text-align:right;font-size:15px;margin-top:4px}
+.p-meta{margin-top:18px;display:grid;grid-template-columns:128px minmax(0,1fr);gap:8px 10px;font-size:16px}
+.p-meta b{font-size:14px;letter-spacing:.04em}
+.p-tbl{overflow-x:auto}
+.p-tbl table{width:100%;border-collapse:collapse;font-size:12px}
+.p-tbl th{background:#00a99f;color:#fff;text-align:left;font-size:11.5px;letter-spacing:.04em;border-color:#00a99f!important}
+.p-tbl th,.p-tbl td{border:1px solid #b9c6c8;padding:5px 6px;vertical-align:top;overflow-wrap:break-word}
+.p-tbl td:first-child{min-width:104px}
+.p-tbl td:nth-child(2),.p-tbl td:nth-child(3){white-space:nowrap}
+@media (max-width:520px){.p-tbl table{font-size:10.5px}.p-tbl th,.p-tbl td{padding:4px 3px}.p-tbl td:first-child{min-width:56px}.p-tbl th{letter-spacing:0}.paper{padding:18px 12px}}
+.p-tbl td.r,.p-tbl th.r{text-align:right;white-space:nowrap}
+.p-tbl td.x{width:1%;border:0;padding:0 0 0 6px}
+.p-tbl .del{border:0;background:none;color:#8a2b2b;font:600 16px var(--font-body);cursor:pointer;padding:2px 6px}
+.pe{display:inline-block;min-width:44px;border-bottom:1px dashed #00a99f;outline:0}
+.pe:focus{background:#e9f6f5}
+@media print{.pe{border:0}}
+.p-tbl .empty{color:#6b7b7e;text-align:center;padding:14px}
+.p-notes p,.p-foot p{margin:0}
+.p-sign{display:flex;flex-direction:column;align-items:flex-start;align-self:flex-end;width:max-content;max-width:100%;gap:2px;margin-top:6px}
+.p-sign small{font:600 13px/1.2 var(--font-body);letter-spacing:.16em;color:#00776e;margin-bottom:8px}
+.p-sign span{font-size:12.5px;margin-top:3px;color:#00776e}
+.p-sign b{align-self:stretch;font:700 22px/1.1 "Cormorant Garamond",Georgia,serif;border-top:2px solid var(--teal);padding-top:5px;text-align:left;color:#00776e}
+.p-bottom{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.paper{aspect-ratio:210/297}
+.p-foot{border-top:1px solid #cfd8da;padding-top:10px;font-size:12px}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff}
+  .wrap,.deco,.deco-wide,.ov-bar,.offer-form,.offer-actions{display:none!important}
+  #offer{position:static;background:none;padding:0;overflow:visible}
+  .ov-card{background:none;padding:0;max-width:none}
+  .paper{border:0;padding:0}
+  .no-copy{display:none!important}
+}
 </style>
-</head>
-<body>
-<div class="wrap">
-  <header>
-    <div class="eyebrow" id="eyebrowLabel">kart · sözcük çekmecesi</div>
-    <h1>Kelime Kutusu</h1>
-    <div class="sub" id="subLabel">Kartları çevir, eşleştir, sına — kelimeleri kalıcı hafızaya yerleştir.</div>
-    
-     <div style="margin: 15px 0;">
-      <button class="btn stamp" onclick="selectNewSet()" style="font-size: 13px; padding: 10px 20px;">🎲 Rastgele 30 Kelime Seç</button>
-      <button class="btn primary" onclick="selectAllWords()" style="font-size: 13px; padding: 10px 20px; margin-left: 8px;">🌟 Tüm Kelimeleri Seç</button>
-    </div>
 
-    <div class="progress-rail" id="progressRail"></div>
-    <div style="text-align:center;"><span class="streak-badge" id="streakBadge">🔥 …</span></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="koli" viewBox="-8 -16 80 90"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M30 0 60 15 30 30 0 15Z"/><path d="M0 15 30 30V68L0 53Z" fill="currentColor" fill-opacity=".12"/><path d="M30 30 60 15V53L30 68Z" fill="currentColor" fill-opacity=".05"/>
+    <path d="M15 7.5 45 22.5" stroke-width="5" stroke-opacity=".5"/></g></symbol>
+  <symbol id="acik" viewBox="-12 -20 90 96"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M30 0 60 15 30 30 0 15Z"/><path d="M0 15 30 30V68L0 53Z" fill="currentColor" fill-opacity=".12"/><path d="M30 30 60 15V53L30 68Z" fill="currentColor" fill-opacity=".05"/>
+    <path d="M0 15 30 0 23-14-7 1Z"/><path d="M60 15 30 0 37-14 67 1Z"/><path d="M30 30 0 15-6 28 24 43Z"/><path d="M30 30 60 15 66 28 36 43Z"/></g></symbol>
+  <symbol id="levha" viewBox="-4 -2 78 56"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M35 0 70 17 35 34 0 17Z"/><path d="M0 17V23L35 40 70 23V17" /><path d="M0 23V29L35 46 70 29V23"/><path d="M35 34V46"/></g></symbol>
+  <pattern id="oluk" width="18" height="14" patternUnits="userSpaceOnUse"><path d="M0 7Q4.5-1 9 7T18 7" fill="none" stroke="currentColor" stroke-width="1.5"/></pattern>
+</defs></svg>
+<svg class="deco" viewBox="0 0 420 900" preserveAspectRatio="xMidYMin slice" aria-hidden="true" focusable="false">
+  <use href="#koli" x="-14" y="60" width="96" height="108"/>
+  <use href="#acik" x="318" y="130" width="104" height="112"/>
+  <use href="#levha" x="20" y="330" width="100" height="72"/>
+  <use href="#koli" x="330" y="420" width="78" height="88"/>
+  <use href="#acik" x="-8" y="560" width="108" height="116"/>
+  <use href="#koli" x="300" y="690" width="110" height="124"/>
+  <use href="#levha" x="30" y="790" width="90" height="64"/>
+</svg>
+<svg class="deco deco-wide" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+  <use href="#koli" x="30" y="80" width="150" height="168"/>
+  <use href="#acik" x="170" y="330" width="170" height="182"/>
+  <use href="#levha" x="40" y="580" width="160" height="115"/>
+  <use href="#koli" x="210" y="700" width="120" height="135"/>
+  <use href="#acik" x="1400" y="90" width="170" height="182"/>
+  <use href="#koli" x="1310" y="360" width="140" height="157"/>
+  <use href="#levha" x="1440" y="560" width="150" height="108"/>
+  <use href="#koli" x="1340" y="710" width="130" height="146"/>
+</svg>
+<div class="wrap">
+  <header class="brand">
+    <svg class="hdeco" viewBox="-12 -20 90 96" aria-hidden="true" focusable="false"><use href="#acik" width="90" height="96" x="-12" y="-20"/></svg>
+    <div class="logo" role="img" aria-label="Desen Pack, yenilikçi ambalaj çözümleri"><svg viewBox="86 210 670 175" xmlns="http://www.w3.org/2000/svg" focusable="false"><path class="lt" d="M 88.5 297.3 C 88.5 250.3 126.6 212.3 173.5 212.3 C 220.4 212.3 259.6 250.4 258.5 297.3 C 258.2 306.4 257.2 316.7 252.6 327.1 C 260.9 281.9 230.2 260.9 183.1 254.2 C 162.8 251.3 132.1 256.1 132.1 256.1 C 132.1 256.1 147.1 262.1 147.1 274.4 L 144.5 336.6 L 154.9 348.5 L 175.5 273.8 C 208.6 273.8 237.6 290.9 236.5 320.8 C 235.3 350.4 216.8 382.3 173.5 382.3 C 126.6 382.3 88.5 344.2 88.5 297.3 "/><path class="li" d="M 304.7 338.1 C 305.1 338.3 305.6 338.4 306.1 338.4 C 306.2 338.4 306.4 338.4 306.5 338.3 C 306.6 338.3 306.7 338.2 306.8 338.1 C 306.9 338.0 307.0 337.9 307.1 337.9 C 307.2 337.8 307.3 337.7 307.3 337.5 C 307.4 337.4 307.5 337.3 307.5 337.2 C 307.5 337.1 307.6 337.0 307.6 336.9 C 307.7 336.8 307.7 336.7 307.7 336.7 L 304.2 329.4 L 305.0 329.4 L 308.0 335.9 L 310.7 329.4 L 311.5 329.4 L 308.4 336.8 C 308.1 337.5 307.8 338.0 307.4 338.4 C 307.0 338.8 306.5 339.0 306 339.0 C 305.6 339.0 305.2 339.0 304.7 338.8 Z M 304.7 338.1 "/><path class="li" d="M 318.6 329.9 C 318.1 329.9 317.7 330.0 317.4 330.2 C 317.0 330.3 316.7 330.5 316.4 330.8 C 316.2 331.1 316.0 331.4 315.8 331.8 C 315.7 332.1 315.6 332.4 315.6 332.7 L 320.9 332.7 C 320.9 332.5 320.8 332.2 320.7 331.8 C 320.6 331.5 320.5 331.2 320.3 331.0 C 320.2 330.7 320.0 330.5 319.9 330.4 C 319.8 330.3 319.6 330.2 319.4 330.1 C 319.2 330.0 319.1 330.0 319 330.0 C 318.9 330.0 318.8 329.9 318.6 329.9 C 318.6 329.9 318.6 329.9 318.6 329.9 M 315.6 333.3 C 315.6 333.7 315.7 334 315.8 334.3 C 316.0 334.7 316.2 335.0 316.5 335.3 C 316.7 335.6 317.0 335.8 317.4 336.0 C 317.8 336.1 318.2 336.2 318.6 336.2 C 319.0 336.2 319.4 336.1 319.8 336.0 C 320.0 335.9 320.2 335.7 320.4 335.6 L 320.4 336.4 C 320.3 336.4 320.2 336.5 320.1 336.6 C 319.6 336.8 319.1 336.9 318.6 336.9 C 318.0 336.9 317.5 336.8 317.1 336.6 C 316.6 336.4 316.2 336.1 315.9 335.8 C 315.6 335.4 315.3 335.0 315.1 334.5 C 314.9 334.1 314.8 333.6 314.8 333.1 L 314.8 333.1 C 314.8 332.5 314.9 332.1 315.1 331.6 C 315.3 331.1 315.6 330.7 315.9 330.4 C 316.2 330.0 316.6 329.8 317.1 329.6 C 317.6 329.3 318.1 329.2 318.6 329.2 C 318.8 329.2 319.1 329.3 319.3 329.4 C 319.6 329.4 319.8 329.6 320.1 329.8 C 320.4 330.0 320.7 330.2 320.9 330.5 C 321.1 330.8 321.3 331.2 321.4 331.7 C 321.6 332.2 321.7 332.7 321.7 333.3 Z M 315.6 333.3 "/><path class="li" d="M 327.2 336.7 L 326.5 336.7 L 326.5 329.4 L 327.2 329.4 L 327.2 330.7 C 327.8 329.7 328.6 329.2 329.7 329.2 C 330.7 329.2 331.4 329.5 331.9 330.1 C 332.5 330.6 332.7 331.4 332.7 332.4 L 332.7 336.7 L 332.0 336.7 L 332.0 332.7 C 332.0 330.9 331.2 329.9 329.5 329.9 C 328.4 329.9 327.7 330.5 327.2 331.8 Z M 327.2 336.7 "/><path class="li" d="M 338.4 330.8 L 338.4 329.4 L 337.7 329.4 L 337.7 336.7 L 338.4 336.7 Z M 337.6 327.2 L 338.5 327.2 L 338.5 328.4 L 337.6 328.4 Z M 337.6 327.2 "/><path class="li" d="M 344.1 333.4 L 344.1 333.6 C 344.1 333.6 344.1 333.8 344.1 334.0 C 344.1 334.3 344.1 334.4 344.1 334.5 C 344.1 334.6 344.1 334.7 344.1 334.9 C 344.2 335.1 344.2 335.2 344.3 335.3 C 344.3 335.4 344.4 335.6 344.5 335.7 C 345.0 336.2 345.7 336.3 346.7 335.9 L 346.7 336.6 C 346.6 336.6 346.5 336.6 346.4 336.6 C 346.4 336.7 346.3 336.7 346.2 336.7 C 346.1 336.7 346.1 336.7 346.0 336.7 C 345.9 336.7 345.8 336.8 345.7 336.8 C 345.6 336.8 345.5 336.8 345.4 336.8 C 345.3 336.7 345.2 336.7 345.1 336.7 C 344.9 336.7 344.8 336.6 344.7 336.6 C 344.6 336.5 344.5 336.5 344.4 336.4 C 344.3 336.3 344.2 336.2 344.1 336.2 C 343.9 336.0 343.8 335.9 343.7 335.7 C 343.6 335.5 343.6 335.3 343.5 335.1 C 343.5 335.0 343.5 334.8 343.4 334.6 C 343.4 334.4 343.4 334.2 343.4 334.0 C 343.4 333.9 343.4 333.7 343.4 333.6 L 343.4 326.3 L 344.1 326.3 Z M 344.1 333.4 "/><path class="li" d="M 352.0 330.8 L 352.0 329.4 L 351.3 329.4 L 351.3 336.7 L 352.0 336.7 Z M 351.1 327.2 L 352.1 327.2 L 352.1 328.4 L 351.1 328.4 Z M 351.1 327.2 "/><path class="li" d="M 357.7 334.1 L 362.2 329.4 L 363.2 329.4 L 360.0 332.6 L 363.3 336.7 L 362.4 336.7 L 359.4 333.2 L 357.7 334.9 L 357.7 336.7 L 357 336.7 L 357 326.3 L 357.7 326.3 Z M 357.7 334.1 "/><path class="li" d="M 369.0 339.1 L 370.1 336.8 L 369.5 336.8 L 368.2 338.7 Z M 371.7 336.4 C 371.6 336.4 371.4 336.5 371.3 336.6 C 370.9 336.8 370.4 336.9 369.8 336.9 C 369.3 336.9 368.8 336.8 368.3 336.6 C 367.9 336.4 367.5 336.1 367.1 335.8 C 366.8 335.4 366.6 335.0 366.4 334.6 C 366.2 334.1 366.1 333.6 366.1 333.1 L 366.1 333.1 C 366.1 332.5 366.2 332.1 366.4 331.6 C 366.6 331.1 366.8 330.7 367.2 330.4 C 367.5 330.0 367.9 329.8 368.3 329.6 C 368.8 329.3 369.3 329.2 369.8 329.2 C 370.4 329.2 370.9 329.4 371.3 329.6 C 371.5 329.6 371.6 329.7 371.7 329.7 L 371.7 330.6 C 371.5 330.4 371.2 330.3 371.0 330.1 C 370.6 330.0 370.2 329.9 369.8 329.9 C 369.4 329.9 369.0 330.0 368.6 330.2 C 368.3 330.3 367.9 330.5 367.7 330.8 C 367.4 331.1 367.2 331.4 367.1 331.8 C 366.9 332.2 366.8 332.6 366.8 333.0 L 366.8 333.1 C 366.8 333.5 366.9 333.9 367.1 334.3 C 367.2 334.7 367.4 335.0 367.7 335.3 C 368.0 335.6 368.3 335.8 368.7 336.0 C 369.0 336.1 369.4 336.2 369.8 336.2 C 370.3 336.2 370.7 336.1 371.0 336.0 C 371.3 335.9 371.5 335.7 371.7 335.6 Z M 371.7 336.4 "/><path class="li" d="M 377.3 330.8 L 377.3 329.4 L 376.6 329.4 L 376.6 336.7 L 377.3 336.7 Z M 376.5 327.2 L 377.4 327.2 L 377.4 328.4 L 376.5 328.4 Z M 376.5 327.2 "/><path class="li" d="M 394.4 333.6 L 394.4 332.9 C 394.2 332.9 394.0 332.9 393.8 332.9 C 393.6 332.9 393.4 332.8 393.2 332.8 L 392.5 332.8 C 391.9 332.8 391.3 332.9 390.9 333.0 C 390.4 333.1 390.1 333.2 389.8 333.5 C 389.8 333.6 389.7 333.7 389.6 333.9 C 389.5 334.1 389.5 334.2 389.5 334.5 C 389.5 334.7 389.5 334.9 389.6 335.1 C 389.6 335.3 389.7 335.5 389.9 335.6 C 390.0 335.8 390.3 335.9 390.6 336.1 C 390.9 336.2 391.2 336.2 391.6 336.2 C 391.9 336.2 392.1 336.2 392.4 336.2 C 392.6 336.1 392.8 336.0 393.0 336.0 C 393.2 335.9 393.3 335.8 393.5 335.7 C 393.6 335.6 393.7 335.5 393.8 335.4 C 393.9 335.3 394.0 335.2 394.0 335.1 C 394.1 335.0 394.2 334.9 394.2 334.8 C 394.2 334.7 394.3 334.6 394.3 334.5 C 394.3 334.4 394.3 334.3 394.4 334.2 C 394.4 334.2 394.4 334.1 394.4 333.6 M 389.4 329.9 C 390.2 329.5 391.0 329.3 392 329.3 C 394.0 329.3 395.0 330.3 395.0 332.4 L 395.0 336.7 L 394.4 336.7 L 394.4 335.5 L 394.3 335.5 C 394.3 335.6 394.3 335.6 394.2 335.7 C 394.2 335.7 394.1 335.8 394.1 335.9 C 394.0 335.9 393.9 336.0 393.8 336.1 C 393.7 336.2 393.6 336.2 393.5 336.3 C 393.4 336.4 393.3 336.5 393.1 336.6 C 393.0 336.6 392.8 336.7 392.7 336.7 C 392.5 336.8 392.4 336.8 392.2 336.9 C 392.0 336.9 391.8 336.9 391.6 336.9 C 390.7 336.9 390.0 336.7 389.5 336.2 C 389.0 335.8 388.7 335.2 388.7 334.5 C 388.7 333.8 389.0 333.3 389.6 332.8 C 390.2 332.4 390.9 332.2 391.8 332.2 L 394.3 332.2 C 394.3 331.1 393.9 330.4 393.0 330.1 C 392.8 330.0 392.5 330.0 392.2 330.0 C 391.8 330.0 391.5 330.0 391.2 330.0 C 391.0 330.0 390.7 330.1 390.6 330.1 C 390.4 330.2 390.2 330.3 390.1 330.3 C 390 330.4 389.9 330.4 389.8 330.5 C 389.7 330.5 389.7 330.6 389.7 330.6 Z M 389.4 329.9 "/><path class="li" d="M 400.6 336.7 L 399.9 336.7 L 399.9 329.4 L 400.6 329.4 L 400.6 330.7 C 401.2 329.7 402.0 329.2 403.0 329.2 C 403.7 329.2 404.2 329.4 404.6 329.7 C 405.0 330.1 405.3 330.5 405.5 331.0 C 405.6 330.9 405.7 330.7 405.8 330.6 C 405.9 330.4 406.1 330.2 406.3 330.0 C 406.5 329.8 406.8 329.6 407.1 329.5 C 407.4 329.3 407.8 329.2 408.2 329.2 C 408.7 329.2 409.1 329.3 409.5 329.5 C 409.8 329.7 410.1 330.0 410.3 330.3 C 410.5 330.6 410.7 330.9 410.8 331.3 C 410.9 331.7 410.9 332.0 410.9 332.4 L 410.9 336.7 L 410.2 336.7 L 410.2 332.5 C 410.2 332.4 410.2 332.3 410.2 332.1 C 410.2 332.0 410.2 331.8 410.1 331.6 C 410.1 331.4 410.0 331.2 409.9 331.0 C 409.8 330.8 409.7 330.6 409.5 330.5 C 409.4 330.3 409.2 330.2 408.9 330.1 C 408.7 330.0 408.4 329.9 408.1 329.9 C 407.0 329.9 406.2 330.6 405.7 331.9 C 405.7 332.0 405.8 332.2 405.8 332.4 L 405.8 336.7 L 405.1 336.7 L 405.1 332.5 C 405.1 332.4 405.1 332.3 405.0 332.1 C 405.0 332.0 405.0 331.8 405.0 331.6 C 404.9 331.4 404.9 331.2 404.8 331.0 C 404.7 330.8 404.5 330.6 404.4 330.5 C 404.2 330.3 404.0 330.2 403.8 330.1 C 403.5 330.0 403.2 329.9 402.9 329.9 C 401.8 329.9 401.0 330.5 400.6 331.8 Z M 400.6 336.7 "/><path class="li" d="M 416.6 333.2 L 416.6 334.7 C 416.9 335.3 417.4 335.7 418.0 336.0 C 418.7 336.3 419.3 336.4 420.0 336.2 C 420.7 336.1 421.3 335.8 421.7 335.2 C 422.1 334.8 422.3 334.3 422.4 333.7 C 422.4 333.1 422.4 332.5 422.2 332.0 C 422.1 331.4 421.8 330.9 421.3 330.5 C 420.9 330.1 420.3 329.9 419.7 329.9 C 419.3 329.9 418.9 330.0 418.6 330.0 C 418.3 330.1 418.0 330.2 417.8 330.3 C 417.6 330.4 417.4 330.5 417.3 330.7 C 417.1 330.9 417.0 331.0 416.9 331.1 C 416.9 331.2 416.8 331.4 416.6 331.7 Z M 415.9 326.3 L 416.6 326.3 L 416.6 331.0 C 416.7 330.8 416.8 330.6 417 330.5 C 417.2 330.3 417.4 330.1 417.6 329.9 C 417.9 329.7 418.2 329.6 418.6 329.4 C 418.9 329.3 419.3 329.2 419.7 329.2 C 420.4 329.2 421.1 329.4 421.6 329.8 C 422.2 330.2 422.6 330.8 422.8 331.4 C 423.1 332.1 423.2 332.8 423.1 333.5 C 423.1 334.0 423.0 334.5 422.7 335.0 C 422.5 335.4 422.2 335.8 421.8 336.1 C 421.5 336.3 421.1 336.5 420.7 336.7 C 420.3 336.8 419.9 336.9 419.5 336.9 C 419.0 336.9 418.4 336.7 417.9 336.4 C 417.3 336.0 416.9 335.6 416.6 335.2 L 416.6 336.7 L 415.9 336.7 Z M 415.9 326.3 "/><path class="li" d="M 433.4 333.6 L 433.4 332.9 C 433.3 332.9 433.1 332.9 432.9 332.9 C 432.7 332.9 432.5 332.8 432.3 332.8 L 431.5 332.8 C 430.9 332.8 430.4 332.9 429.9 333.0 C 429.5 333.1 429.1 333.2 428.9 333.5 C 428.8 333.6 428.7 333.7 428.6 333.9 C 428.6 334.1 428.5 334.2 428.5 334.5 C 428.5 334.7 428.5 334.9 428.6 335.1 C 428.7 335.3 428.8 335.5 428.9 335.6 C 429.1 335.8 429.3 335.9 429.6 336.1 C 429.9 336.2 430.2 336.2 430.7 336.2 C 430.9 336.2 431.2 336.2 431.4 336.2 C 431.6 336.1 431.9 336.0 432.0 336.0 C 432.2 335.9 432.4 335.8 432.5 335.7 C 432.6 335.6 432.8 335.5 432.8 335.4 C 432.9 335.3 433.0 335.2 433.1 335.1 C 433.1 335.0 433.2 334.9 433.2 334.8 C 433.3 334.7 433.3 334.6 433.3 334.5 C 433.4 334.4 433.4 334.3 433.4 334.2 C 433.4 334.2 433.4 334.1 433.4 333.6 M 428.4 329.9 C 429.2 329.5 430.1 329.3 431.0 329.3 C 433.1 329.3 434.1 330.3 434.1 332.4 L 434.1 336.7 L 433.4 336.7 L 433.4 335.5 L 433.4 335.5 C 433.3 335.6 433.3 335.6 433.3 335.7 C 433.2 335.7 433.1 335.8 433.1 335.9 C 433.0 335.9 432.9 336.0 432.9 336.1 C 432.8 336.2 432.7 336.2 432.5 336.3 C 432.4 336.4 432.3 336.5 432.2 336.6 C 432.0 336.6 431.9 336.7 431.7 336.7 C 431.6 336.8 431.4 336.8 431.2 336.9 C 431.0 336.9 430.8 336.9 430.6 336.9 C 429.7 336.9 429.0 336.7 428.5 336.2 C 428.0 335.8 427.8 335.2 427.8 334.5 C 427.8 333.8 428.1 333.3 428.6 332.8 C 429.2 332.4 429.9 332.2 430.9 332.2 L 433.4 332.2 C 433.4 331.1 432.9 330.4 432.1 330.1 C 431.8 330.0 431.5 330.0 431.2 330.0 C 430.9 330.0 430.6 330.0 430.3 330.0 C 430.0 330.0 429.8 330.1 429.6 330.1 C 429.4 330.2 429.3 330.3 429.1 330.3 C 429.0 330.4 428.9 330.4 428.8 330.5 C 428.8 330.5 428.7 330.6 428.7 330.6 Z M 428.4 329.9 "/><path class="li" d="M 439.6 333.4 L 439.6 333.6 C 439.6 333.6 439.6 333.8 439.6 334.0 C 439.6 334.3 439.6 334.4 439.6 334.5 C 439.6 334.6 439.6 334.7 439.6 334.9 C 439.6 335.1 439.7 335.2 439.7 335.3 C 439.8 335.4 439.9 335.6 440.0 335.7 C 440.4 336.2 441.2 336.3 442.1 335.9 L 442.2 336.6 C 442.0 336.6 441.9 336.6 441.9 336.6 C 441.9 336.7 441.8 336.7 441.7 336.7 C 441.6 336.7 441.5 336.7 441.5 336.7 C 441.4 336.7 441.3 336.8 441.2 336.8 C 441.1 336.8 441.0 336.8 440.9 336.8 C 440.8 336.7 440.7 336.7 440.5 336.7 C 440.4 336.7 440.3 336.6 440.2 336.6 C 440.1 336.5 440.0 336.5 439.9 336.4 C 439.7 336.3 439.6 336.2 439.5 336.2 C 439.4 336.0 439.3 335.9 439.2 335.7 C 439.1 335.5 439.0 335.3 439.0 335.1 C 439.0 335.0 438.9 334.8 438.9 334.6 C 438.9 334.4 438.9 334.2 438.9 334.0 C 438.9 333.9 438.9 333.7 438.9 333.6 L 438.9 326.3 L 439.6 326.3 Z M 439.6 333.4 "/><path class="li" d="M 451.2 333.6 L 451.2 332.9 C 451.0 332.9 450.8 332.9 450.6 332.9 C 450.4 332.9 450.2 332.8 450.0 332.8 L 449.3 332.8 C 448.7 332.8 448.2 332.9 447.7 333.0 C 447.3 333.1 446.9 333.2 446.7 333.5 C 446.6 333.6 446.5 333.7 446.4 333.9 C 446.4 334.1 446.3 334.2 446.3 334.5 C 446.3 334.7 446.3 334.9 446.4 335.1 C 446.4 335.3 446.6 335.5 446.7 335.6 C 446.9 335.8 447.1 335.9 447.4 336.1 C 447.7 336.2 448.0 336.2 448.4 336.2 C 448.7 336.2 449.0 336.2 449.2 336.2 C 449.4 336.1 449.6 336.0 449.8 336.0 C 450.0 335.9 450.1 335.8 450.3 335.7 C 450.4 335.6 450.5 335.5 450.6 335.4 C 450.7 335.3 450.8 335.2 450.9 335.1 C 450.9 335.0 451.0 334.9 451.0 334.8 C 451.1 334.7 451.1 334.6 451.1 334.5 C 451.1 334.4 451.2 334.3 451.2 334.2 C 451.2 334.2 451.2 334.1 451.2 333.6 M 446.2 329.9 C 447 329.5 447.9 329.3 448.8 329.3 C 450.8 329.3 451.9 330.3 451.9 332.4 L 451.9 336.7 L 451.2 336.7 L 451.2 335.5 L 451.1 335.5 C 451.1 335.6 451.1 335.6 451.0 335.7 C 451.0 335.7 450.9 335.8 450.9 335.9 C 450.8 335.9 450.7 336.0 450.6 336.1 C 450.5 336.2 450.4 336.2 450.3 336.3 C 450.2 336.4 450.1 336.5 449.9 336.6 C 449.8 336.6 449.7 336.7 449.5 336.7 C 449.4 336.8 449.2 336.8 449.0 336.9 C 448.8 336.9 448.6 336.9 448.4 336.9 C 447.5 336.9 446.8 336.7 446.3 336.2 C 445.8 335.8 445.6 335.2 445.6 334.5 C 445.6 333.8 445.8 333.3 446.4 332.8 C 447.0 332.4 447.7 332.2 448.6 332.2 L 451.2 332.2 C 451.2 331.1 450.7 330.4 449.9 330.1 C 449.6 330.0 449.3 330.0 449.0 330.0 C 448.6 330.0 448.3 330.0 448.1 330.0 C 447.8 330.0 447.6 330.1 447.4 330.1 C 447.2 330.2 447.0 330.3 446.9 330.3 C 446.8 330.4 446.7 330.4 446.6 330.5 C 446.5 330.5 446.5 330.6 446.5 330.6 Z M 446.2 329.9 "/><path class="li" d="M 457.3 327.3 L 457.3 326.6 L 456.6 326.6 L 456.6 327.5 L 457.3 327.5 Z M 456.6 329.4 L 457.3 329.4 L 457.3 336.0 C 457.3 336.1 457.3 336.3 457.3 336.4 C 457.3 336.6 457.3 336.8 457.3 337.0 C 457.3 337.2 457.2 337.4 457.2 337.5 C 457.2 337.7 457.1 337.9 457 338.1 C 456.9 338.3 456.8 338.4 456.7 338.6 C 456.6 338.6 456.4 338.7 456.3 338.8 C 456.2 338.9 456.1 338.9 456.0 339.0 C 455.9 339.0 455.8 339.1 455.7 339.1 C 455.5 339.1 455.4 339.1 455.3 339.2 C 455.2 339.2 455.1 339.2 455.0 339.2 C 454.9 339.2 454.8 339.1 454.7 339.1 C 454.7 339.1 454.6 339.1 454.5 339.1 C 454.4 339.1 454.3 339.1 454.3 339.0 C 454.2 339.0 454.2 339.0 454.1 339.0 L 454.0 339.0 L 454.0 338.3 C 455.0 338.7 455.8 338.6 456.2 338.1 C 456.3 338.0 456.4 337.9 456.4 337.7 C 456.5 337.6 456.5 337.5 456.6 337.3 C 456.6 337.1 456.6 337.0 456.6 336.9 C 456.6 336.8 456.6 336.7 456.6 336.4 C 456.6 336.2 456.6 336.0 456.6 336.0 Z M 456.6 329.4 "/><path class="li" d="M 471.7 339.1 L 472.8 336.8 L 472.2 336.8 L 470.9 338.7 Z M 474.4 336.4 C 474.2 336.4 474.1 336.5 474.0 336.6 C 473.5 336.8 473.0 336.9 472.5 336.9 C 471.9 336.9 471.4 336.8 471.0 336.6 C 470.5 336.4 470.1 336.1 469.8 335.8 C 469.5 335.4 469.2 335.0 469.0 334.6 C 468.8 334.1 468.8 333.6 468.8 333.1 L 468.8 333.1 C 468.8 332.5 468.8 332.1 469.0 331.6 C 469.2 331.1 469.5 330.7 469.8 330.4 C 470.2 330.0 470.6 329.8 471.0 329.6 C 471.5 329.3 472.0 329.2 472.5 329.2 C 473.1 329.2 473.6 329.4 474 329.6 C 474.1 329.6 474.2 329.7 474.4 329.7 L 474.4 330.6 C 474.1 330.4 473.9 330.3 473.7 330.1 C 473.3 330.0 472.9 329.9 472.5 329.9 C 472.1 329.9 471.7 330.0 471.3 330.2 C 470.9 330.3 470.6 330.5 470.3 330.8 C 470.1 331.1 469.9 331.4 469.7 331.8 C 469.6 332.2 469.5 332.6 469.5 333.0 L 469.5 333.1 C 469.5 333.5 469.6 333.9 469.7 334.3 C 469.9 334.7 470.1 335.0 470.4 335.3 C 470.6 335.6 471.0 335.8 471.3 336.0 C 471.7 336.1 472.1 336.2 472.5 336.2 C 472.9 336.2 473.3 336.1 473.7 336.0 C 474.0 335.9 474.2 335.7 474.4 335.6 Z M 474.4 336.4 "/><path class="li" d="M 481.8 327.2 L 482.8 327.2 L 482.8 328.4 L 481.8 328.4 Z M 479.5 327.2 L 480.5 327.2 L 480.5 328.4 L 479.5 328.4 Z M 481.2 336.2 C 481.6 336.2 482.0 336.1 482.4 336.0 C 482.7 335.8 483.0 335.6 483.3 335.3 C 483.6 335.0 483.8 334.7 483.9 334.3 C 484.1 333.9 484.1 333.5 484.1 333.1 L 484.1 333.1 C 484.1 332.6 484.1 332.2 483.9 331.8 C 483.8 331.4 483.5 331.1 483.3 330.8 C 483 330.5 482.7 330.3 482.3 330.1 C 481.9 330.0 481.6 329.9 481.1 329.9 C 480.7 329.9 480.3 330.0 479.9 330.2 C 479.6 330.3 479.3 330.5 479.0 330.8 C 478.7 331.1 478.5 331.4 478.4 331.8 C 478.2 332.2 478.2 332.6 478.2 333.0 L 478.2 333.1 C 478.2 333.5 478.2 333.9 478.4 334.3 C 478.5 334.7 478.8 335.0 479.0 335.3 C 479.3 335.6 479.6 335.8 480.0 336.0 C 480.4 336.1 480.7 336.2 481.2 336.2 M 481.1 336.9 C 480.6 336.9 480.1 336.8 479.6 336.6 C 479.2 336.4 478.8 336.1 478.5 335.8 C 478.1 335.4 477.9 335.0 477.7 334.6 C 477.5 334.1 477.4 333.6 477.4 333.1 L 477.4 333.1 C 477.4 332.5 477.5 332.1 477.7 331.6 C 477.9 331.1 478.1 330.7 478.5 330.4 C 478.8 330.0 479.2 329.8 479.7 329.6 C 480.1 329.4 480.6 329.2 481.2 329.2 C 481.7 329.2 482.2 329.4 482.7 329.6 C 483.1 329.8 483.5 330.0 483.8 330.4 C 484.2 330.7 484.4 331.1 484.6 331.6 C 484.8 332.0 484.9 332.5 484.9 333.0 L 484.9 333.1 C 484.9 333.6 484.8 334.1 484.6 334.5 C 484.4 335.0 484.2 335.4 483.8 335.7 C 483.5 336.1 483.1 336.4 482.6 336.6 C 482.2 336.8 481.7 336.9 481.1 336.9 "/><path class="li" d="M 488.0 329.4 L 494.1 329.4 L 494.1 329.8 L 488.9 336.1 L 494.2 336.1 L 494.2 336.7 L 487.8 336.7 L 487.8 336.3 L 493.1 330.0 L 488.0 330.0 Z M 488.0 329.4 "/><path class="li" d="M 502.6 328.4 L 503.6 328.4 L 503.6 327.2 L 502.6 327.2 Z M 500.3 328.4 L 501.3 328.4 L 501.3 327.2 L 500.3 327.2 Z M 504.3 329.4 L 505.0 329.4 L 505.0 336.7 L 504.3 336.7 L 504.3 335.5 C 503.8 336.4 502.9 336.9 501.9 336.9 C 500.9 336.9 500.1 336.6 499.6 336.1 C 499.1 335.5 498.8 334.7 498.8 333.7 L 498.8 329.4 L 499.5 329.4 L 499.5 333.4 C 499.5 335.3 500.3 336.2 502.0 336.2 C 503.1 336.2 503.9 335.6 504.3 334.4 Z M 504.3 329.4 "/><path class="li" d="M 510.8 336.7 L 510.1 336.7 L 510.1 329.4 L 510.8 329.4 L 510.8 330.7 C 511.3 329.7 512.2 329.2 513.2 329.2 C 513.9 329.2 514.4 329.4 514.8 329.7 C 515.2 330.1 515.5 330.5 515.7 331.0 C 515.8 330.9 515.9 330.7 516.0 330.6 C 516.1 330.4 516.2 330.2 516.5 330.0 C 516.7 329.8 516.9 329.6 517.3 329.5 C 517.6 329.3 518.0 329.2 518.4 329.2 C 518.8 329.2 519.3 329.3 519.6 329.5 C 520 329.7 520.3 330.0 520.5 330.3 C 520.7 330.6 520.8 330.9 520.9 331.3 C 521.0 331.7 521.1 332.0 521.1 332.4 L 521.1 336.7 L 520.4 336.7 L 520.4 332.5 C 520.4 332.4 520.4 332.3 520.4 332.1 C 520.4 332.0 520.3 331.8 520.3 331.6 C 520.3 331.4 520.2 331.2 520.1 331.0 C 520.0 330.8 519.9 330.6 519.7 330.5 C 519.6 330.3 519.4 330.2 519.1 330.1 C 518.9 330.0 518.6 329.9 518.3 329.9 C 517.1 329.9 516.3 330.6 515.9 331.9 C 515.9 332.0 515.9 332.2 515.9 332.4 L 515.9 336.7 L 515.2 336.7 L 515.2 332.5 C 515.2 332.4 515.2 332.3 515.2 332.1 C 515.2 332.0 515.2 331.8 515.1 331.6 C 515.1 331.4 515.0 331.2 514.9 331.0 C 514.8 330.8 514.7 330.6 514.6 330.5 C 514.4 330.3 514.2 330.2 514.0 330.1 C 513.7 330.0 513.4 329.9 513.1 329.9 C 512 329.9 511.2 330.5 510.8 331.8 Z M 510.8 336.7 "/><path class="li" d="M 526.7 333.4 L 526.7 333.6 C 526.7 333.6 526.7 333.8 526.7 334.0 C 526.7 334.3 526.7 334.4 526.7 334.5 C 526.7 334.6 526.7 334.7 526.8 334.9 C 526.8 335.1 526.8 335.2 526.9 335.3 C 526.9 335.4 527.0 335.6 527.1 335.7 C 527.6 336.2 528.3 336.3 529.3 335.9 L 529.3 336.6 C 529.2 336.6 529.1 336.6 529.0 336.6 C 529.0 336.7 528.9 336.7 528.8 336.7 C 528.7 336.7 528.7 336.7 528.6 336.7 C 528.5 336.7 528.4 336.8 528.3 336.8 C 528.2 336.8 528.1 336.8 528.0 336.8 C 527.9 336.7 527.8 336.7 527.7 336.7 C 527.5 336.7 527.4 336.6 527.3 336.6 C 527.2 336.5 527.1 336.5 527.0 336.4 C 526.9 336.3 526.8 336.2 526.7 336.2 C 526.5 336.0 526.4 335.9 526.3 335.7 C 526.2 335.5 526.2 335.3 526.1 335.1 C 526.1 335.0 526.1 334.8 526.0 334.6 C 526.0 334.4 526.0 334.2 526.0 334.0 C 526.0 333.9 526.0 333.7 526.0 333.6 L 526.0 326.3 L 526.7 326.3 Z M 526.7 333.4 "/><path class="li" d="M 535.5 329.9 C 535.0 329.9 534.6 330.0 534.3 330.2 C 533.9 330.3 533.6 330.5 533.3 330.8 C 533.1 331.1 532.9 331.4 532.7 331.8 C 532.6 332.1 532.5 332.4 532.5 332.7 L 537.8 332.7 C 537.8 332.5 537.8 332.2 537.6 331.8 C 537.5 331.5 537.4 331.2 537.2 331.0 C 537.1 330.7 537.0 330.5 536.8 330.4 C 536.7 330.3 536.5 330.2 536.3 330.1 C 536.1 330.0 536.0 330.0 535.9 330.0 C 535.8 330.0 535.7 329.9 535.6 329.9 C 535.5 329.9 535.5 329.9 535.5 329.9 M 532.5 333.3 C 532.5 333.7 532.6 334 532.7 334.3 C 532.9 334.7 533.1 335.0 533.4 335.3 C 533.6 335.6 534.0 335.8 534.3 336.0 C 534.7 336.1 535.1 336.2 535.5 336.2 C 535.9 336.2 536.3 336.1 536.7 336.0 C 536.9 335.9 537.2 335.7 537.4 335.6 L 537.4 336.4 C 537.2 336.4 537.1 336.5 537.0 336.6 C 536.5 336.8 536.0 336.9 535.5 336.9 C 534.9 336.9 534.4 336.8 534.0 336.6 C 533.5 336.4 533.1 336.1 532.8 335.8 C 532.5 335.4 532.2 335.0 532.0 334.5 C 531.8 334.1 531.7 333.6 531.7 333.1 L 531.7 333.1 C 531.7 332.5 531.8 332.1 532.0 331.6 C 532.2 331.1 532.5 330.7 532.8 330.4 C 533.1 330.0 533.5 329.8 534.0 329.6 C 534.5 329.3 535.0 329.2 535.5 329.2 C 535.7 329.2 536.0 329.3 536.2 329.4 C 536.5 329.4 536.7 329.6 537.0 329.8 C 537.3 330.0 537.6 330.2 537.8 330.5 C 538.0 330.8 538.2 331.2 538.4 331.7 C 538.5 332.2 538.6 332.7 538.6 333.3 Z M 532.5 333.3 "/><path class="li" d="M 547.2 330.1 C 547.0 330.1 546.9 330.1 546.7 330.1 C 546.6 330.1 546.3 330.2 546.0 330.3 C 545.8 330.4 545.5 330.6 545.3 330.8 C 545.1 331.0 544.8 331.3 544.6 331.7 C 544.4 332.1 544.2 332.6 544.1 333.2 L 544.1 336.7 L 543.4 336.7 L 543.4 329.4 L 544.1 329.4 L 544.1 331.4 C 544.5 330.6 545.0 330.0 545.6 329.8 C 546.1 329.5 546.6 329.3 547.2 329.3 Z M 547.2 330.1 "/><path class="li" d="M 552.5 330.8 L 552.5 329.4 L 551.8 329.4 L 551.8 336.7 L 552.5 336.7 Z M 551.7 327.2 L 552.7 327.2 L 552.7 328.4 L 551.7 328.4 Z M 551.7 327.2 "/><path class="li" d="M 314.2 304.7 L 331.0 304.7 C 344.0 304.7 352.0 296.1 352.0 282.0 C 352.0 267.9 344.0 259.3 331.0 259.3 L 314.2 259.3 Z M 331 256.7 C 347.6 256.7 358.1 266.3 358.1 282.0 C 358.1 297.7 347.6 307.3 331 307.3 L 302.9 307.3 L 302.9 306.5 L 304.0 306.5 C 306.7 306.5 308.7 304.4 308.8 301.9 L 308.8 262.1 C 308.7 259.4 306.6 257.6 303.9 257.6 L 302.9 257.6 L 302.9 256.7 Z M 331 256.7 "/><path class="li" d="M 394.3 307.3 L 360.0 307.3 L 360.0 306.5 L 361.2 306.5 C 363.9 306.5 365.9 304.5 366.1 302.0 L 366.1 262.0 C 366.1 259.5 363.9 257.6 361.2 257.6 L 360.0 257.6 L 360.0 256.7 L 384.6 256.7 C 388.0 256.7 392.6 256.0 394.1 255.4 L 394.1 264.9 L 393.1 264.9 L 393.1 263.6 C 393.1 261.3 391.5 259.4 388.9 259.3 L 371.4 259.3 L 371.4 280.7 L 385.8 280.7 C 388.2 280.7 389.2 279.1 389.2 277.2 L 389.2 276.1 L 390.2 276.1 L 390.2 287.9 L 389.2 287.9 L 389.2 286.8 C 389.2 284.9 388.2 283.4 386.0 283.3 L 371.4 283.3 L 371.4 304.7 L 384.6 304.7 C 392.7 304.6 395.6 300.7 398.0 295.2 L 398.9 295.2 Z M 394.3 307.3 "/><path class="li" d="M 431.8 285.8 C 434.4 288.0 435.5 291.6 435.6 294.9 C 435.6 302.4 429.0 308.5 420.6 308.5 C 415.7 308.5 409.2 307.3 406.1 304.5 C 405.6 302.3 405.8 297.3 407.0 294.0 L 407.9 294.0 C 407.2 301.6 412.3 306.2 419.7 305.9 C 426.7 305.8 431.0 302.1 431.0 296.6 C 431.0 294.0 430.1 291.9 427.9 290.0 L 411.0 277.0 C 407.9 274.3 407.0 270.8 407.0 267.8 C 406.9 261 413.1 255.5 420.9 255.5 C 424.8 255.5 427.4 255.9 429.3 256.3 L 432.1 256.3 L 432.2 265.5 L 431.3 265.5 C 431.3 260.8 428.1 258.0 421.5 258.0 C 415.9 258.0 411.3 261.6 411.4 266.1 C 411.4 268.2 412.1 270.6 414.7 272.7 Z M 431.8 285.8 "/><path class="li" d="M 474.8 307.3 L 440.5 307.3 L 440.6 306.5 L 441.7 306.5 C 444.4 306.5 446.5 304.5 446.6 302.0 L 446.6 262.0 C 446.6 259.5 444.4 257.6 441.7 257.6 L 440.6 257.6 L 440.5 256.7 L 465.2 256.7 C 468.6 256.7 473.1 256.0 474.6 255.4 L 474.6 264.9 L 473.7 264.9 L 473.7 263.6 C 473.7 261.3 472 259.4 469.4 259.3 L 452.0 259.3 L 452.0 280.7 L 466.4 280.7 C 468.7 280.7 469.8 279.1 469.8 277.2 L 469.8 276.1 L 470.7 276.1 L 470.7 287.9 L 469.8 287.9 L 469.8 286.8 C 469.8 284.9 468.8 283.4 466.6 283.3 L 452.0 283.3 L 452.0 304.7 L 465.1 304.7 C 473.2 304.6 476.1 300.7 478.5 295.2 L 479.4 295.2 Z M 474.8 307.3 "/><path class="li" d="M 540.1 256.7 L 540.1 257.6 L 538.7 257.6 C 536.2 257.6 534.1 259.4 534.0 261.8 L 534.0 297.7 C 534.0 303.2 534.8 308.5 534.8 308.5 L 534.0 308.5 L 490.1 266.9 L 490.1 302.1 C 490.2 304.5 492.3 306.5 494.8 306.5 L 496.2 306.5 L 496.3 307.3 L 480.3 307.3 L 480.3 306.5 L 481.7 306.5 C 484.3 306.5 486.4 304.5 486.4 302.1 L 486.4 266.0 C 486.4 260.2 485.6 255.5 485.6 255.5 L 486.5 255.5 L 530.3 296.7 L 530.3 261.8 C 530.1 259.4 528.1 257.6 525.6 257.6 L 524.2 257.6 L 524.2 256.7 Z M 540.1 256.7 "/><path class="li" d="M 582.8 256.7 C 594.6 256.7 602.1 262.2 602.1 271.1 C 602.0 284.0 589.2 289.7 577.8 284.2 L 577.8 283.4 C 577.8 283.4 591.2 286.9 595.4 274.8 C 595.8 273.7 596.0 271.7 596.0 270.3 C 596.0 263.4 591.0 259.2 582.7 259.2 L 574.5 259.2 L 574.5 301.9 C 574.6 304.4 576.7 306.5 579.4 306.5 L 580.6 306.5 L 580.6 307.3 L 563.1 307.3 L 563.1 306.5 L 564.3 306.5 C 567.0 306.5 569.1 304.5 569.2 302.0 L 569.2 262.0 C 569.1 259.5 567.0 257.6 564.3 257.6 L 563.1 257.6 L 563.1 256.7 Z M 582.8 256.7 "/><path class="li" d="M 630.8 287.7 L 621.3 264.6 L 611.6 287.7 Z M 643.0 301.5 C 644.7 305.0 647.2 306.5 649.5 306.5 L 650.1 306.5 L 650.1 307.3 L 632.8 307.3 L 632.8 306.5 L 633.5 306.5 C 635.4 306.5 637.6 304.6 636.5 301.4 L 631.9 290.2 L 610.5 290.2 L 605.9 301.2 C 604.6 304.5 606.8 306.5 608.8 306.5 L 609.5 306.5 L 609.5 307.3 L 593.4 307.3 L 593.4 306.5 L 594.1 306.5 C 596.3 306.5 598.9 305.0 600.7 301.6 L 618.1 264.2 C 618.1 264.2 621.2 257.7 621.4 255.5 L 622.2 255.5 Z M 643.0 301.5 "/><path class="li" d="M 699.7 286.1 L 698.8 297.6 C 694.4 304.3 685.5 308.5 675.6 308.5 C 658.5 308.4 647.8 298.3 647.8 282.0 C 647.8 265.6 658.5 255.5 675.6 255.5 C 682.6 255.5 690.1 257.5 695.3 260.6 L 697.2 272.5 L 696.4 272.5 C 693.9 262.2 686.0 258.1 675.5 258.1 C 662.2 258.1 653.9 267.2 653.9 282.0 C 653.9 296.6 662.2 305.7 675.6 305.9 C 688.2 306.0 698.0 299.9 698.9 286.1 Z M 699.7 286.1 "/><path class="li" d="M 716.2 301.9 C 716.3 304.4 718.5 306.5 721.2 306.5 L 722.2 306.5 L 722.2 307.3 L 704.9 307.3 L 704.9 306.5 L 705.9 306.5 C 708.6 306.5 710.8 304.4 710.8 301.9 L 710.8 262.1 C 710.8 259.6 708.6 257.6 705.9 257.6 L 704.9 257.6 L 704.9 256.7 L 722.2 256.7 L 722.2 257.6 L 721.2 257.6 C 718.5 257.6 716.3 259.5 716.2 262.0 Z M 745.9 303.0 C 747.9 305.3 749.6 306.4 753.3 306.4 L 753.3 307.3 L 750.1 307.3 C 747.6 307.3 741.7 307.0 737.7 302.5 L 719.2 282.2 L 737.3 260.8 C 738.6 259.3 737.5 257.5 735.5 257.5 L 734.7 257.5 L 734.7 256.7 L 747.0 256.7 L 747.0 257.5 C 744.0 257.5 742.6 257.8 740.7 260.2 L 725.0 280.2 Z M 745.9 303.0 "/></svg></div>
+    <div class="bar"><h1>Kutu Hesaplama</h1>
+    <div class="acts"><button class="hide" id="hide" type="button" aria-pressed="false">Alışı gizle</button><button class="reset" id="reset" type="button">Varsayılana dön</button></div></div>
   </header>
 
-  <nav class="tabs" id="tabs">
-    <button data-tab="type" class="active">Yazma</button>
-    <button data-tab="focusedType" style="color: var(--sage); border-bottom-color: var(--sage);">Odaklı Yazma</button>
-    <button data-tab="hard">Zorlu Kelimeler</button>
-    <button data-tab="stats">İstatistik</button>
-  </nav>
+  <div class="seg two" id="modeSeg" role="group" aria-label="Kapak tipi">
+    <button type="button" data-mode="normal" aria-pressed="true">A Box</button>
+    <button type="button" data-mode="tam" aria-pressed="false">Tam kapak</button>
+  </div>
+  <div class="seg five" id="profSeg" role="group" aria-label="Kutu tipi">
+    <button type="button" data-prof="B">B</button>
+    <button type="button" data-prof="C">C</button>
+    <button type="button" data-prof="A">BC</button>
+    <button type="button" data-prof="EB">BE</button>
+    <button type="button" data-prof="LEVHA">Levha</button>
+  </div>
 
-  <div class="panel" id="panel"></div>
-  <footer>ilerlemen bulutta tutulur · istediğin cihazdan pratik yap</footer>
+  <div class="seg two" id="colSeg" role="group" aria-label="Kâğıt rengi">
+    <button type="button" data-col="esmer" aria-pressed="true">Esmer</button>
+    <button type="button" data-col="beyaz" aria-pressed="false">Beyaz</button>
+  </div>
+
+  <div class="panel">
+    <div class="group" id="qualGroup"><h2>Kalite ve fiyat listesi</h2>
+      <div class="row">
+        <div class="seg four" id="dlSeg" role="group" aria-label="Levha dalgası">
+          <button type="button" data-dl="B">B</button>
+          <button type="button" data-dl="C">C</button>
+          <button type="button" data-dl="A">BC</button>
+          <button type="button" data-dl="EB">BE</button>
+        </div>
+        <div class="seg two" id="bkSeg" role="group" aria-label="Baskı">
+          <button type="button" data-bk="baskisiz">Baskısız</button>
+          <button type="button" data-bk="baskili">Baskılı</button>
+        </div>
+        <select id="qual" aria-label="Kalite"></select>
+        <div class="seg tiers" id="tierSeg" role="group" aria-label="Miktar">
+          <button type="button" data-t="0">2000 m²</button>
+          <button type="button" data-t="1">5000 m²</button>
+          <button type="button" data-t="2">20000 m²</button>
+        </div>
+        <p class="note" id="qNote">Karaman-Konya fiyat listesi, 7.10.2026. KDV hariç.</p>
+      </div>
+    </div>
+    <div class="group" id="layerGroup"><h2>Kağıt gramajları</h2><div class="row" id="layers"></div></div>
+    <div class="group"><h2 id="dimTitle">Ölçüler (mm)</h2><div class="row c3" id="dims"></div><p class="note" id="dimNote"></p></div>
+    <div class="group" id="priceGroup"><h2>Fiyat</h2>
+      <div class="row c2">
+        <label><span id="priceLbl">M² fiyatı (₺)</span><input id="price" inputmode="decimal" autocomplete="off"></label>
+        <label>Kâr oranı (%)<input id="kar" inputmode="decimal" autocomplete="off"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="result" id="result" aria-live="polite"></div>
+
+  <details id="adv">
+    <summary>Ek paylar (mm)</summary>
+    <div class="row c2">
+      <label>En ek (I)<input id="ei" inputmode="decimal" autocomplete="off"></label>
+      <label>Boy ek (J)<input id="ej" inputmode="decimal" autocomplete="off"></label>
+    </div>
+  </details>
+  <p class="note">Hesap, HESAPLAMA.xlsx dosyasındaki formüllerle aynıdır. WTL ile başlayan kaliteler beyaz, TL ve IMK ile başlayanlar esmer sayılır. Değerler bu cihazda hatırlanır.</p>
 </div>
 
+<div id="offer" hidden role="dialog" aria-modal="true" aria-label="Fiyat teklifi">
+ <div class="ov-card">
+  <div class="ov-bar"><h2>Fiyat teklifi</h2><button type="button" class="hide" id="offClose">Kapat</button></div>
+  <div class="offer-form">
+    <div class="row c2">
+      <label><span>Sayın (isim)</span><input id="oIsim" autocomplete="off"></label>
+      <label><span>Firma adı (cari)</span><input id="oCari" autocomplete="off"></label>
+    </div>
+    <div class="row c2">
+      <label><span>Ürün adı</span><input id="oUrun" autocomplete="off"></label>
+      <label><span>Adet</span><input class="num" id="oAdet" inputmode="numeric" autocomplete="off"></label>
+    </div>
+    <p class="note" id="oCur"></p>
+    <p class="note">Tablodaki fiyata dokunup elle değiştirebilirsin (yanında kesik çizgi olan).</p>
+    <button type="button" class="btn" id="oKeep">Hafızaya al, sıradaki koliyi hesapla</button>
+    <p class="msg" id="oMsg" role="status"></p>
+  </div>
+  <div class="offer-actions">
+    <a class="btn ghost" id="oWa" target="_blank" rel="noopener" href="#">WhatsApp'ı aç (yazı)</a>
+    <button type="button" class="btn ghost" id="oPdf">PDF gönder (paylaş menüsü)</button>
+    <button type="button" class="btn ghost" id="oPrint">Yazdır / PDF</button>
+    <button type="button" class="btn ghost" id="oClear">Ürünleri temizle</button>
+  </div>
+  <div id="paper" class="paper"></div>
+ </div>
+</div>
 <script>
-// --- FIREBASE KURULUMU ---
-const firebaseConfig = {
-  apiKey: "AIzaSyDLmlevieYyaJplcGaDZc-BGDgxYbIRXqM",
-  authDomain: "kelime-kutusu-a9d8e.firebaseapp.com",
-  projectId: "kelime-kutusu-a9d8e",
-  storageBucket: "kelime-kutusu-a9d8e.firebasestorage.app",
-  messagingSenderId: "400184263845",
-  appId: "1:400184263845:web:5d62c14e6eeb53b8eb394c",
-  measurementId: "G-2EW9CGE3WZ"
+/*CALC*/
+var PROFILES={
+  A:{label:'A BOX',n:5,flute:{2:1.35,4:1.45},plus:0,ei:14,ej:60,
+     w:function(l){return (l[1]*1.35+l[3]*1.45)+l[0]+l[2]+l[4];}},
+  C:{label:'C',n:3,flute:{1:1.45},plus:3,ei:10,ej:43,
+     w:function(l){return (l[1]*1.45)+l[0]+l[2]+3;}},
+  B:{label:'B',n:3,flute:{1:1.35},plus:0,ei:10,ej:70,
+     w:function(l){return (l[1]*1.35)+l[0]+l[2];}},
+  EB:{label:'EB',n:5,flute:{1:1.35,3:1.25},plus:0,ei:9,ej:51,
+     w:function(l){return (l[1]*1.35+l[3]*1.25)+l[0]+l[2]+l[4];}}
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// SABİT ORTAK DEPO (Şifresiz, tek sana özel)
-const userCode = "yusuf_ortak_depo"; 
-
-// Buluta Veri Yazma Fonksiyonu
-function updateCloudStats(en, success) {
-  const docRef = db.collection('userStats').doc(userCode).collection('words').doc(en);
-  
-  db.runTransaction(transaction => {
-    return transaction.get(docRef).then(doc => {
-      let dogru = 0, yanlis = 0;
-      if (doc.exists) {
-        dogru = doc.data().dogru || 0;
-        yanlis = doc.data().yanlis || 0;
-      }
-      if (success) dogru++; else yanlis++;
-      transaction.set(docRef, { en: en, dogru: dogru, yanlis: yanlis }, {merge: true});
-    });
-  }).catch(err => console.log("Bulut kaydı hatası:", err));
+var DEFAULTS={
+  normal:{
+    A:{l:[100,90,90,90,90],d:[300,250,150],p:11.2},
+    C:{l:[120,120,120],d:[355,535,280],p:10.691},
+    B:{l:[120,120,90],d:[240,405,130],p:10.448},
+    EB:{l:[100,120,80,120,100],d:[325,325,460],p:16.115},
+    LEVHA:{l:[],d:[750,750,0],p:10}},
+  tam:{
+    A:{l:[135,160,135,160,135],d:[217,484,275],p:17.732},
+    C:{l:[100,120,100],d:[240,1560,350],p:10.069},
+    B:{l:[90,120,90],d:[240,405,130],p:7.898},
+    EB:{l:[90,90,80,90,90],d:[170,1650,460],p:12.909},
+    LEVHA:{l:[],d:[750,750,0],p:10}}
+};
+function calc(prof,mode,v,kar){
+  if(prof==='LEVHA'){
+    var K0=v.d[0]*v.d[1]/1e6, O0=K0*v.p, R0=O0*(1+kar/100);
+    return {levha:true,K:K0,O:O0,R:R0,S:2000/K0,T:5000/K0,U:20000/K0};
+  }
+  var P=PROFILES[prof], F=v.d[0],G=v.d[1],H=v.d[2];
+  var I=(mode==='tam'?F*2+H:F+H)+v.ei;
+  var J=(F+G)*2+v.ej;
+  var K=I*J/1e6, L=P.w(v.l)/1000, M=K*L, O=K*v.p, R=O*(1+kar/100);
+  return {I:I,J:J,K:K,L:L,M:M,O:O,P:O/M,Q:R/M,R:R,S:2000/K,T:5000/K,U:20000/K};
 }
+/*ENDCALC*/
 
-// ============ TARİH YARDIMCILARI ============
-function todayStr(){
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+/* Desenpack fiyat listesi 7.10.2026: [kalite, [2000-5000, 5000-20000, 20000+ m² fiyatı]] */
+var QUALS={
+  B:[['TL90 HPFL120 TL90',[18.462,15.009,14.572]],['TL90 HPFL90 TL90',[16.475,13.394,13.004]],['WTL120 HPFL120 TL90',[21.660,17.610,17.097]],['WTL120 HPFL135 TL90',[23.261,18.911,18.361]],['WTL120 HPFL90 TL90',[19.563,15.905,15.442]]],
+  A:[['IMK100 HPFL120 FL80 HPFL120 IMK100',[33.723,27.417,26.619]],['IMK100 HPFL90 FL80 HPFL90 TL90',[28.824,23.434,22.751]],['TL90 FL80 FL80 HPFL90 TL90',[26.711,21.716,21.083]],['WTL120 FL80 FL80 HPFL90 TL90',[30.945,25.159,24.426]],['WTL120 HPFL120 FL80 HPFL120 IMK100',[36.942,30.034,29.160]],['WTL120 HPFL90 FL80 HPFL90 IMK100',[33.149,26.951,26.166]]],
+  EB:[['IMK100 HPFL120 FL80 HPFL120 IMK100',[32.828,26.689,25.912]],['TL90 HPFL90 FL80 HPFL90 TL90',[27.348,22.235,21.587]],['WTL120 HPFL120 FL80 HPFL90 IMK100',[34.938,28.405,27.578]],['WTL120 HPFL90 FL80 HPFL90 TL90',[31.055,25.248,24.513]]],
+  C:[['IMK100 HPFL120 IMK100',[20.510,16.675,16.189]],['IMK100 HPFL90 TL90',[17.670,14.366,13.947]],['IMK120 HPFL120 IMK120',[22.650,18.415,17.879]],['IMK135 HPFL135 IMK135',[26.287,21.371,20.749]],['TL90 HPFL120 TL90',[19.469,15.829,15.368]],['TL90 HPFL90 TL90',[17.146,13.940,13.534]],['WTL120 HPFL120 TL90',[22.910,18.626,18.084]],['WTL120 HPFL135 IMK100',[25.237,20.518,19.921]],['WTL120 HPFL90 TL90',[20.326,16.526,16.044]]]
+};
+function qCol(q){return /^WTL/.test(q[0])?'beyaz':'esmer';}
+function qProf(){return S.prof==='LEVHA'?(cur().dl||'B'):S.prof;}
+function listPrice(q,t){var m=(S.prof==='LEVHA'&&cur().bk!=='baskili')?0.92:1;return Math.round(q[1][t]*m*1000)/1000;}
+function applyQual(v,i){
+  var q=QUALS[qProf()][i];
+  v.q=i; v.l=q[0].match(/\d+/g).map(Number);
+  S.color=/^WTL/.test(q[0])?'beyaz':'esmer';
+  if(v.t<0)v.t=0;
+  v.p[S.color]=listPrice(q,v.t);
 }
-function addDays(dateStr, n){
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(y, m - 1, d); // yerel tarih bileşenleriyle oluştur, saat dilimi kaymasını önler
-  dt.setDate(dt.getDate() + n);
-  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+var KEY='kutu-hesap-v1';
+var S={mode:'normal',prof:'A',color:'esmer',kar:12,vals:{},off:{isim:'',cari:'',lines:[],cur:{urun:'',adet:''}}};
+function load(){try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.vals){S=s;if(!S.color)S.color='esmer';
+    if(!S.off||!S.off.lines){S.off={isim:'',cari:'',lines:[],cur:{urun:'',adet:''}};}
+    if(!S.off.cur)S.off.cur={urun:'',adet:''};}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function vkey(){return S.prof==='LEVHA'?'LEVHA':S.mode+'.'+S.prof;}
+function defVals(){
+  var d=DEFAULTS[S.mode][S.prof], P=PROFILES[S.prof];
+  return {l:d.l.slice(),d:d.d.slice(),p:{esmer:d.p,beyaz:d.p},q:-1,t:0,ei:P?P.ei:0,ej:P?P.ej:0};
 }
+function cur(){var k=vkey();if(!S.vals[k])S.vals[k]=defVals();var v=S.vals[k];if(typeof v.p==='number')v.p={esmer:v.p,beyaz:v.p};if(v.q===undefined){v.q=-1;v.t=0;}return v;}
 
-// Bir kelimenin "biliniyor olma olasılığı" tahmini.
-// Ham oran yerine yumuşatılmış oran kullanılır: (doğru + 1) / (doğru + yanlış + 2)
-// Örnek: 30 doğru / 10 yanlış -> ~0.74 (iyi biliniyor), 0 doğru / 5 yanlış -> ~0.14 (çok zayıf)
-function knowledgeScore(dogru, yanlis){
-  return (dogru + 1) / (dogru + yanlis + 2);
+var $=function(id){return document.getElementById(id);};
+function num(s){var x=parseFloat(String(s).replace(',','.'));return isFinite(x)?x:0;}
+function fmt(x,dec){return isFinite(x)?x.toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}):'-';}
+function field(id,label,val,tag){
+  return '<label><span>'+label+(tag?' <small>'+tag+'</small>':'')+'</span><input id="'+id+'" inputmode="decimal" autocomplete="off" value="'+String(val).replace('.',',')+'"></label>';
 }
-
-// Tüm kelimelerin buluttaki durumunu (dogru/yanlis) çeker.
-async function fetchAllWordStats(){
-  const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
-  const map = {};
-  snapshot.forEach(doc => { map[doc.id] = doc.data(); });
-  return map;
-}
-
-// ============ SERİ (STREAK) & GENEL İSTATİSTİK TAKİBİ ============
-let userStats = { streak:0, longestStreak:0, lastActiveDate:null, totalReviews:0, totalCorrect:0, totalWrong:0 };
-let userStatsLoaded = false;
-
-async function loadUserStats(){
-  try{
-    const doc = await db.collection('userStats').doc(userCode).get();
-    if(doc.exists){
-      const d = doc.data();
-      userStats = {
-        streak: d.streak || 0,
-        longestStreak: d.longestStreak || 0,
-        lastActiveDate: d.lastActiveDate || null,
-        totalReviews: d.totalReviews || 0,
-        totalCorrect: d.totalCorrect || 0,
-        totalWrong: d.totalWrong || 0,
-      };
+function build(){
+  var v=cur(), P=PROFILES[S.prof], isL=S.prof==='LEVHA';
+  document.querySelectorAll('#modeSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.mode===S.mode);});
+  document.querySelectorAll('#profSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.prof===S.prof);});
+  document.querySelectorAll('#colSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.col===S.color);});
+  $('modeSeg').hidden=isL;
+  $('dlSeg').hidden=!isL;
+  document.querySelectorAll('#dlSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.dl===(v.dl||'B'));});
+  $('bkSeg').hidden=!isL;
+  document.querySelectorAll('#bkSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.bk===(v.bk||'baskisiz'));});
+  $('qNote').textContent=isL?('Karaman-Konya fiyat listesi, 7.10.2026. KDV hariç. '+(v.bk==='baskili'?'Baskılı levhada indirim yok.':'Baskısız levhada liste fiyatından %8 düşülmüştür.')):'Karaman-Konya fiyat listesi, 7.10.2026. KDV hariç.';
+  {
+    $('qual').innerHTML='<option value="-1">Özel (elle gir)</option>'+QUALS[qProf()].map(function(q,i){return qCol(q)===S.color?'<option value="'+i+'">'+q[0]+'</option>':'';}).join('');
+  }
+  $('layerGroup').hidden=isL;
+  $('adv').hidden=isL;
+  if(!isL){
+    var names=['A','B','C','D','E'], off=P.n===3?1:0, h='';
+    for(var i=0;i<P.n;i++){
+      h+=field('l'+i,String(i+1),v.l[i],'');
     }
-    // Bir günden fazla ara verilmişse seriyi kır (bugün ve dün dışında bir tarihse)
-    const today = todayStr();
-    const yesterday = addDays(today, -1);
-    if(userStats.lastActiveDate && userStats.lastActiveDate !== today && userStats.lastActiveDate !== yesterday){
-      userStats.streak = 0;
-    }
-  } catch(err){
-    console.log('İstatistik yüklenemedi:', err);
+    $('layers').className='row '+(P.n===5?'c5':'c3');
+    $('layers').innerHTML=h;
   }
-  userStatsLoaded = true;
-  renderStreakBadge();
+  $('dimTitle').textContent=isL?'Levha ölçüsü (mm)':'Ölçüler (mm)';
+  $('dimNote').textContent=isL?'Mailden 750x750 gibi kopyalayıp bir kutuya yapıştırabilirsin. Küçük olan En, büyük olan Boy olur.':'Mailden 100x150x200 gibi kopyalayıp bir kutuya yapıştırabilirsin. Sonuncusu Yükseklik olur, ilk ikisinden küçük olan En, büyük olan Boy olur.';
+  var dh=field('d0','En',v.d[0])+field('d1','Boy',v.d[1]);
+  if(isL){$('dims').className='row c2';} else {$('dims').className='row c3';dh+=field('d2','Yükseklik',v.d[2]);}
+  $('dims').innerHTML=dh;
+  $('priceLbl').textContent='M² fiyatı, '+(S.color==='esmer'?'esmer':'beyaz')+' (₺)';
+  $('price').value=String(v.p[S.color]).replace('.',',');
+  $('kar').value=String(S.kar).replace('.',',');
+  $('ei').value=String(v.ei).replace('.',',');
+  $('ej').value=String(v.ej).replace('.',',');
+  render();
 }
-
-function saveUserStats(){
-  db.collection('userStats').doc(userCode).set(userStats, { merge: true }).catch(err => console.log('İstatistik kayıt hatası:', err));
+function item(t,val,unit){return '<div class="it"><dt>'+t+'</dt><dd>'+val+(unit?'<u>'+unit+'</u>':'')+'</dd></div>';}
+function syncQual(){
+  var v=cur();
+  $('qual').value=String(v.q);
+  document.querySelectorAll('#tierSeg button').forEach(function(b){b.setAttribute('aria-pressed',v.q>=0&&+b.dataset.t===v.t);});
 }
-
-// Her doğru/yanlış cevapta çağrılır: günlük seriyi ve toplam sayaçları günceller
-function registerActivity(success){
-  userStats.totalReviews++;
-  if(success) userStats.totalCorrect++; else userStats.totalWrong++;
-
-  const today = todayStr();
-  if(userStats.lastActiveDate !== today){
-    const yesterday = addDays(today, -1);
-    userStats.streak = (userStats.lastActiveDate === yesterday) ? userStats.streak + 1 : 1;
-    userStats.lastActiveDate = today;
-    if(userStats.streak > userStats.longestStreak) userStats.longestStreak = userStats.streak;
-  }
-  saveUserStats();
-  renderStreakBadge();
-}
-
-function renderStreakBadge(){
-  const el = document.getElementById('streakBadge');
-  if(!el) return;
-  if(!userStatsLoaded){ el.textContent = '🔥 …'; return; }
-  el.textContent = userStats.streak > 0 ? `🔥 ${userStats.streak} günlük seri` : '🔥 Bugün pratik yap, seriyi başlat!';
-}
-
-// --- SENİN DEV KELİME HAVUZUN BURASI ---
-const ALL_WORDS = [
-  // Zamanla yeni kelimelerini bu formata uygun olarak alt alta ekleyeceksin.
-  // Örnek Format: {en:"ingilizce kelime", pos:"türü", tr:"türkçe anlamı", ex:"Örnek cümle ve ___ boşluk"},
-  {en:"dislocate", pos:"fiil", tr:"yerinden çıkarmak (eklem)", ex:"He fell and managed to ___ his shoulder."},
-  {en:"drench", pos:"fiil", tr:"sırılsıklam etmek", ex:"The sudden rain began to ___ everyone in the street."},
-  {en:"refrain", pos:"fiil/isim", tr:"kaçınmak; nakarat", ex:"Please ___ from talking during the film."},
-  {en:"barren", pos:"sıfat", tr:"çorak, verimsiz", ex:"The land was too ___ to grow anything."},
-  {en:"corny", pos:"sıfat", tr:"bayat, klişe (şaka/söz)", ex:"He told a ___ joke that made everyone groan."},
-  {en:"obscure", pos:"sıfat/fiil", tr:"belirsiz, bilinmeyen; gizlemek", ex:"The clouds began to ___ the mountain view."},
-  {en:"feisty", pos:"sıfat", tr:"hırçın, mücadeleci,cesur", ex:"The ___ puppy refused to back down."},
-  {en:"pair", pos:"isim/fiil", tr:"çift; eşleştirmek", ex:"She bought a new ___ of shoes."},
-  {en:"fatigue", pos:"isim", tr:"yorgunluk, bitkinlik", ex:"He felt a deep ___ after the long shift."},
-  {en:"considerable", pos:"sıfat", tr:"hatırı sayılır, önemli ölçüde", ex:"They made ___ progress on the project."},
-  {en:"squirm", pos:"fiil", tr:"kıvranmak, kıpırdanmak", ex:"The child began to ___ in his seat."},
-  {en:"envelope", pos:"isim", tr:"zarf", ex:"She sealed the letter inside an ___."},
-  {en:"chasm", pos:"isim", tr:"uçurum, derin yarık", ex:"A wide ___ separated the two viewpoints."},
-  {en:"snore", pos:"fiil/isim", tr:"horlamak; horlama", ex:"He tends to ___ loudly when he sleeps."},
-  {en:"inhale", pos:"fiil", tr:"nefes almak, içine çekmek", ex:"She paused to ___ the fresh mountain air."},
-  {en:"distribution", pos:"isim", tr:"dağıtım, dağılım", ex:"The company handles ___ across the region."},
-  {en:"staunch", pos:"sıfat", tr:"sadık, kararlı (destekçi)", ex:"He remained a ___ supporter of the cause."},
-  {en:"meager", pos:"sıfat", tr:"kıt, az, yetersiz", ex:"They survived on a ___ income."},
-  {en:"rinse", pos:"fiil", tr:"durulamak", ex:"___ the vegetables under cold water."},
-  {en:"nausea", pos:"isim", tr:"mide bulantısı", ex:"The smell gave her a sudden wave of ___."},
-  {en:"pout", pos:"fiil", tr:"dudak bükmek, somurtmak", ex:"She began to ___ when she didn't get her way."},
-  {en:"counsellor", pos:"isim", tr:"danışman", ex:"The school ___ helped him choose his classes."},
-  {en:"rehearsal", pos:"isim", tr:"prova", ex:"The band scheduled a ___ before the concert."},
-  {en:"meticulously", pos:"zarf", tr:"titizlikle, büyük özenle", ex:"He cleaned the workshop ___."},
-  {en:"evenly", pos:"zarf", tr:"eşit şekilde, düzenli olarak", ex:"Spread the sauce ___ over the base."},
-  {en:"duvet", pos:"isim", tr:"yorgan", ex:"She pulled the ___ up to stay warm."},
-  {en:"syllable", pos:"isim", tr:"hece", ex:"The word 'banana' has three ___s."},
-  {en:"accusation", pos:"isim", tr:"suçlama", ex:"He denied the ___ completely."},
-  {en:"necessity", pos:"isim", tr:"gereklilik, ihtiyaç", ex:"Clean water is a basic ___."},
-  {en:"absence", pos:"isim", tr:"yokluk, devamsızlık", ex:"His ___ from the meeting was noticed."},
-  {en:"rigor", pos:"isim", tr:"disiplinli", ex:"The experiment was carried out with scientific ___."},
-  {en:"falsify", pos:"fiil", tr:"tahrif etmek, sahtesini yapmak", ex:"He was accused of trying to ___ the records."},
-  {en:"incidentally", pos:"zarf", tr:"bu arada, tesadüfen", ex:"___, I saw your brother yesterday."},
-  {en:"makeshift", pos:"sıfat", tr:"dermeçatma, geçici", ex:"They built a ___ shelter from branches."},
-  {en:"permeate", pos:"fiil", tr:"yayılmak, sızmak, nüfuz etmek", ex:"The smell of coffee began to ___ the house."},
-  {en:"perpetual", pos:"sıfat", tr:"sürekli, daimi", ex:"The city seemed to live in a ___ state of noise."},
-  {en:"exaggerate", pos:"fiil", tr:"abartmak", ex:"He tends to ___ his achievements."},
-  {en:"trunk", pos:"isim", tr:"ağaç gövdesi / fil hortumu / bagaj", ex:"The elephant used its ___ to grab the branch."},
-  {en:"provenance", pos:"isim", tr:"köken, menşei", ex:"The ___ of the painting was unclear."},
-  {en:"wrestle", pos:"fiil", tr:"güreşmek, boğuşmak", ex:"The boys began to ___ on the grass."},
-  {en:"vein", pos:"isim", tr:"damar", ex:"The doctor located a ___ in his arm."},
-  {en:"agitate", pos:"fiil", tr:"tedirgin etmek, çalkalamak, kışkırtmak", ex:"The loud noise began to ___ the baby."},
-  {en:"stern", pos:"sıfat", tr:"sert(Tavır), katı (tavır)", ex:"The teacher gave him a ___ warning."},
-  {en:"swell", pos:"fiil", tr:"şişmek, kabarmak", ex:"His ankle began to ___ after the fall."},
-  {en:"sobriquet", pos:"isim", tr:"lakap", ex:"The city earned the ___ 'the Big Apple.'"},
-  {en:"poignant", pos:"sıfat", tr:"dokunaklı, hüzün verici", ex:"The film ended with a ___ farewell scene."},
-  {en:"precept", pos:"isim", tr:"ilke, öğüt, kural", ex:"The book is built around a simple ___."},
-  {en:"lousy", pos:"sıfat", tr:"berbat, kötü", ex:"The weather was ___ all weekend."},
-  {en:"nod", pos:"fiil/isim", tr:"başını sallamak (onay); baş sallama", ex:"She gave a small ___ in agreement."},
-  {en:"privilege", pos:"isim", tr:"ayrıcalık", ex:"Education should not be a ___ for the few."},
-  {en:"subsequent", pos:"sıfat", tr:"sonraki, müteakip", ex:"___ tests confirmed the diagnosis."},
-  {en:"upholstery", pos:"isim", tr:"döşeme (mobilya)", ex:"The car's ___ was made of soft leather."},
-  {en:"flounder", pos:"fiil", tr:"bocalamak, çırpınmak", ex:"He began to ___ in the icy water."},
-  {en:"bribe", pos:"isim/fiil", tr:"rüşvet; rüşvet vermek", ex:"The official refused to accept the ___."},
-  {en:"accumulate", pos:"fiil", tr:"biriktirmek, birikmek", ex:"Dust began to ___ on the old shelves."},
-  {en:"nonchalance", pos:"isim", tr:"kayıtsızlık, umursamazlık", ex:"She answered with surprising ___."},
-  {en:"inconsistent", pos:"sıfat", tr:"tutarsız", ex:"His story was ___ with what he said earlier."},
-  {en:"entice", pos:"fiil", tr:"baştan çıkarmak, cezbetmek", ex:"The smell of fresh bread began to ___ customers inside."},
-  {en:"adversary", pos:"isim", tr:"rakip, hasım", ex:"He faced his old ___ in the final match."},
-  {en:"interaction", pos:"isim", tr:"etkileşim", ex:"The teacher encouraged more ___ between students."},
-  {en:"tentative", pos:"sıfat", tr:"geçici, kesin olmayan, çekingen", ex:"She gave a ___ smile before answering."},
-  {en:"deprive", pos:"fiil", tr:"mahrum etmek, yoksun bırakmak", ex:"The long hours began to ___ him of sleep."},
-  {en:"consecutive", pos:"sıfat", tr:"ardışık, art arda", ex:"She won the championship three ___ times."},
-  {en:"imitate", pos:"fiil", tr:"taklit etmek", ex:"The parrot learned to ___ his voice."},
-  {en:"navel", pos:"isim", tr:"göbek", ex:"The scar was just above his ___."},
-  {en:"indulge", pos:"fiil", tr:"kendini şımartmak, düşkünlük göstermek", ex:"He decided to ___ himself with a slice of cake."},
-  {en:"persevere", pos:"fiil", tr:"azimle devam etmek, sebat etmek", ex:"Despite the setbacks, she chose to ___."},
-  {en:"biased", pos:"sıfat", tr:"taraflı", ex:"The judge was accused of being ___ in his decision."},
-  {en:"scratching", pos:"isim/fiil", tr:"kaşıma, tırmalama", ex:"She heard a strange ___ noise behind the wall."},
-  {en:"quotation", pos:"isim", tr:"alıntı", ex:"He opened his speech with a famous ___."},
-  {en:"punctual", pos:"sıfat", tr:"dakik, vaktinde", ex:"He is always ___ for meetings."},
-  {en:"apathetic", pos:"sıfat", tr:"kayıtsız, ilgisiz", ex:"Many voters seemed ___ about the election."},
-  {en:"allowance", pos:"isim", tr:"harçlık, ödenek", ex:"Her parents give her a small weekly ___."},
-  {en:"condescending", pos:"sıfat", tr:"küçümseyici, tepeden bakan", ex:"His ___ tone annoyed everyone in the room."},
-  {en:"superstitious", pos:"sıfat", tr:"batıl inançlı", ex:"She is ___ about walking under ladders."},
-  {en:"pitcher", pos:"isim", tr:"sürahi", ex:"He filled the ___ with cold water."},
-  {en:"clutch", pos:"fiil/isim", tr:"sıkıca tutmak, kavramak", ex:"She began to ___ her bag tightly."},
-  {en:"tamper", pos:"fiil", tr:"kurcalamak, izinsiz oynamak", ex:"Someone tried to ___ with the lock."},
-  {en:"suburbs", pos:"isim", tr:"banliyö, kenar mahalle", ex:"They moved to the ___ for a quieter life."},
-  {en:"conscientious", pos:"sıfat", tr:"sorumluluk sahibi", ex:"She is known as a ___ worker."},
-  {en:"comma", pos:"isim", tr:"virgül", ex:"Don't forget to add a ___ here."},
-  {en:"relentless", pos:"sıfat", tr:"amansız, yılmaz, aralıksız", ex:"The rain was ___ throughout the night."},
-  {en:"punctuation", pos:"isim", tr:"noktalama", ex:"She forgot to use correct ___ in her essay."},
-  {en:"inanimate", pos:"sıfat", tr:"cansız (nesne)", ex:"The room was full of ___ objects covered in dust."},
-  {en:"conflict", pos:"isim/fiil", tr:"çatışma, anlaşmazlık; çatışmak", ex:"Their opinions were in direct ___ with each other."},
-  {en:"scapegoat", pos:"isim", tr:"günah keçisi", ex:"He was made the ___ for the team's failure."},
-  {en:"indignant", pos:"sıfat", tr:"öfkeli, kızgın (haksızlığa)", ex:"She looked ___ when they questioned her honesty."},
-  {en:"dignity", pos:"isim", tr:"haysiyet, onur", ex:"He faced the criticism with quiet ___."},
-  {en:"exclamation", pos:"isim", tr:"ünlem", ex:"He let out an ___ of surprise."},
-  {en:"conspiracy", pos:"isim", tr:"komplo", ex:"They uncovered a ___ to hide the truth."},
-  {en:"downpour", pos:"isim", tr:"sağanak yağmur", ex:"A sudden ___ soaked them before they reached the car."},
-  {en:"despise", pos:"fiil", tr:"nefret etmek, hor görmek", ex:"She began to ___ his constant excuses."},
-  {en:"diligent", pos:"sıfat", tr:"çalışkan, gayretli", ex:"He is known as a ___ and careful student."},
-  {en:"scold", pos:"fiil", tr:"azarlamak, paylamak", ex:"The teacher had to ___ the boys for shouting."},
-  {en:"leisurely", pos:"sıfat/zarf", tr:"ağırdan alan, aceleyle olmayan", ex:"They took a ___ walk along the beach."},
-  {en:"weep", pos:"fiil", tr:"ağlamak", ex:"She began to ___ quietly during the film."},
-  {en:"appraise", pos:"fiil", tr:"değerlendirmek, kıymet biçmek", ex:"The expert was asked to ___ the old painting."},
-  {en:"rectangle", pos:"isim", tr:"dikdörtgen", ex:"The garden was shaped like a perfect ___."},
-  {en:"rubber", pos:"isim", tr:"lastik / silgi", ex:"She erased the mistake with a ___."},
-  {en:"accustom", pos:"fiil", tr:"alıştırmak", ex:"It took him weeks to ___ himself to the new schedule."},
-  {en:"resign", pos:"fiil", tr:"istifa etmek", ex:"She decided to ___ from her job."},
-  {en:"persuade", pos:"fiil", tr:"ikna etmek", ex:"He tried to ___ her to stay."},
-  {en:"mortify", pos:"fiil", tr:"utandırmak, mahcup etmek", ex:"The mistake seemed to ___ him in front of everyone."},
-  {en:"bearable", pos:"sıfat", tr:"katlanılabilir, dayanılır", ex:"The pain became ___ after the medicine."},
-  {en:"vicious", pos:"sıfat", tr:"saldırgan, vahşi, kötü niyetli", ex:"The dog gave a ___ growl."},
-  {en:"peel", pos:"fiil/isim", tr:"(kabuğunu) soymak; kabuk", ex:"She began to ___ the orange."},
-  {en:"absentmindedly", pos:"zarf", tr:"dalgın bir şekilde", ex:"He ___ left his keys on the table."},
-  {en:"sulk", pos:"fiil", tr:"somurtmak, küsmek", ex:"The child began to ___ after losing the game."},
-  {en:"immense", pos:"sıfat", tr:"muazzam, çok büyük", ex:"They live in an ___ house."},
-  {en:"bruise", pos:"isim/fiil", tr:"morartı; morartmak", ex:"She had a ___ on her arm."},
-  {en:"emit", pos:"fiil", tr:"yaymak (ışık, ses, gaz)", ex:"The old machine began to ___ a strange humming sound."},
-  {en:"conduit", pos:"isim", tr:"kanal, boru hattı, aracı", ex:"The pipe acts as a ___ for water to the tank."},
-  {en:"conserving", pos:"fiil (-ing)", tr:"koruma, tasarruf etme", ex:"___ energy at home can lower your bills."},
-  {en:"nosy", pos:"sıfat", tr:"meraklı, başkasının işine burnunu sokan", ex:"Her ___ neighbor always asks too many questions."},
-  {en:"mischievous", pos:"sıfat", tr:"yaramaz, afacan", ex:"The ___ kitten knocked the vase off the table."},
-  {en:"docile", pos:"sıfat", tr:"uysal, itaatkâr", ex:"The old horse was gentle and ___."},
-  {en:"roundabout", pos:"sıfat/isim", tr:"dolambaçlı; göbekli kavşak", ex:"He took a ___ route to avoid the traffic."},
-  {en:"congestion", pos:"isim", tr:"tıkanıklık, yoğunluk", ex:"Traffic ___ made the journey twice as long."},
-  {en:"arrogant", pos:"sıfat", tr:"kibirli, kendini beğenmiş", ex:"His ___ attitude annoyed his coworkers."},
-  {en:"derelict", pos:"sıfat", tr:"terk edilmiş, harap", ex:"They explored the ___ building near the station."},
-  {en:"aspire", pos:"fiil", tr:"özlemini duymak, hedeflemek", ex:"She continues to ___ to a career in medicine."},
-  {en:"accomplish", pos:"fiil", tr:"başarmak, gerçekleştirmek", ex:"He worked hard to ___ his goals."},
-  {en:"evident", pos:"sıfat", tr:"açık, belli, aşikâr", ex:"It was ___ that she had been crying."},
-  {en:"linger", pos:"fiil", tr:"oyalanmak, sürüp gitmek", ex:"The smell of coffee continued to ___ in the kitchen."},
-  {en:"contrarily", pos:"zarf", tr:"aksine, tersine", ex:"___, the results showed the opposite of what they expected."},
-  {en:"stagnant", pos:"sıfat", tr:"durgun, hareketsiz", ex:"The water in the pond had become ___ over the summer."},
-  {en:"stain", pos:"isim/fiil", tr:"leke; lekelemek", ex:"She tried to remove the coffee ___ from her shirt."},
-  {en:"hindrance", pos:"isim", tr:"engel, mani", ex:"The heavy rain was a real ___ to their plans."},
-  {en:"deceive", pos:"fiil", tr:"aldatmak, kandırmak", ex:"He tried to ___ his friends about where he had been."},
-  {en:"incentive", pos:"isim", tr:"teşvik, özendirici unsur", ex:"The company offered a bonus as an ___ to work harder."},
-  {en:"hypocrite", pos:"isim", tr:"ikiyüzlü kişi", ex:"They called him a ___ for saying one thing and doing another."},
-  {en:"waist", pos:"isim", tr:"bel (vücut)", ex:"She tied the belt tightly around her ___."},
-  {en:"pedestrian", pos:"isim/sıfat", tr:"yaya; sıradan", ex:"The street was closed to cars and open only to ___s."},
-  {en:"groan", pos:"fiil/isim", tr:"inlemek, oflamak", ex:"He let out a ___ when he saw the long queue."},
-  {en:"nudge", pos:"fiil/isim", tr:"hafifçe dürtmek, hafifçe itmek", ex:"She gave him a gentle ___ to wake him up."},
-  {en:"predicament", pos:"isim", tr:"çıkmaz, güç durum", ex:"He found himself in a difficult ___ with no easy way out."},
-  {en:"instinct", pos:"isim", tr:"içgüdü", ex:"Her first ___ was to run for help."},
-  {en:"breeze", pos:"isim", tr:"meltem, hafif rüzgar", ex:"A cool ___ drifted in through the open window."},
-  {en:"apprehension", pos:"isim", tr:"endişe, kaygı, tedirginlik", ex:"She felt a wave of ___ before the interview."},
-  {en:"inferiority", pos:"isim", tr:"aşağılık, yetersizlik hissi", ex:"He struggled with feelings of ___ around his older brother."},
-  {en:"association", pos:"isim", tr:"dernek, birliktelik, çağrışım", ex:"She joined a local sports ___ last year."},
-  {en:"genuine", pos:"sıfat", tr:"gerçek, samimi, hakiki", ex:"Her smile seemed completely ___."},
-  {en:"condemn", pos:"fiil", tr:"kınamak, mahkum etmek", ex:"Leaders were quick to ___ the attack."},
-  {en:"rummage", pos:"fiil", tr:"karıştırmak, eşelemek", ex:"He began to ___ through the drawer looking for his keys."},
-  {en:"invention", pos:"isim", tr:"icat, buluş", ex:"The light bulb was a life-changing ___."},
-  {en:"hunch", pos:"isim", tr:"önsezi, tahmin", ex:"She had a ___ that something was wrong."},
-  {en:"uneven", pos:"sıfat", tr:"düzensiz, eşitsiz, engebeli", ex:"They walked carefully over the ___ ground."},
-  {en:"intuition", pos:"isim", tr:"sezgi", ex:"His ___ told him to double-check the numbers."},
-  {en:"substance", pos:"isim", tr:"madde, özdek, öz", ex:"The bottle contained an unknown ___."},
-  {en:"venture", pos:"fiil/isim", tr:"girişimde bulunmak; girişim", ex:"They decided to ___ into the forest despite the warning."},
-  {en:"plural", pos:"isim/sıfat", tr:"çoğul", ex:"The ___ form of 'child' is 'children'."},
-  {en:"prod", pos:"fiil/isim", tr:"dürtmek, tembihlemek", ex:"She had to ___ him to finish his homework."},
-  {en:"prevent", pos:"fiil", tr:"önlemek, engellemek", ex:"Regular exercise can ___ many health problems."},
-  {en:"disposal", pos:"isim", tr:"imha etmek, atma", ex:"The safe ___ of chemical waste is required by law."},
-  {en:"thrive", pos:"fiil", tr:"gelişmek, serpilmek, başarılı olmak", ex:"The plants began to ___ once they got more sunlight."},
-  {en:"spout", pos:"fiil/isim", tr:"fışkırmak; oluk, ağız (ibrik)", ex:"Water began to ___ from the broken pipe."},
-  {en:"devastate", pos:"fiil", tr:"harap etmek, mahvetmek", ex:"The storm continued to ___ the small coastal town."},
-  {en:"flourish", pos:"fiil", tr:"serpilmek, gelişmek", ex:"The business began to ___ after the new manager arrived."},
-  {en:"whine", pos:"fiil/isim", tr:"sızlanmak, inlemek", ex:"The child began to ___ about being tired."},
-  {en:"comprehend", pos:"fiil", tr:"kavramak, anlamak", ex:"It took her a while to ___ the instructions."},
-  {en:"imperceptible", pos:"sıfat", tr:"fark edilemez, hissedilmez", ex:"The change in temperature was almost ___."},
-  {en:"faucet", pos:"isim", tr:"musluk", ex:"She turned off the ___ after washing her hands."},
-  {en:"abrupt", pos:"sıfat", tr:"ani, beklenmedik", ex:"His ___ departure surprised everyone in the room."},
-  {en:"strangle", pos:"fiil", tr:"boğmak", ex:"He grabbed the rope, afraid it might ___ him."},
-  {en:"innate", pos:"sıfat", tr:"doğuştan gelen", ex:"She has an ___ talent for music."},
-  {en:"veil", pos:"isim/fiil", tr:"peçe, örtü; örtmek", ex:"She lifted the ___ to reveal her face."},
-  {en:"infatuated", pos:"sıfat", tr:"aşırı hayran, tutkun", ex:"He quickly became ___ with his new coworker."},
-  {en:"suffocate", pos:"fiil", tr:"boğulmak, nefes alamamak", ex:"The smoke began to ___ everyone in the room."},
-  {en:"confine", pos:"fiil", tr:"sınırlamak, hapsetmek", ex:"The doctor told him to ___ his activities to light exercise."},
-  {en:"fortifier", pos:"isim", tr:"güçlendirici, kuvvetlendirici", ex:"The supplement works as a natural ___ for the immune system."},
-  {en:"ancestor", pos:"isim", tr:"ata, cet", ex:"Her ___s came from a small village in the mountains."},
-  {en:"descend", pos:"fiil", tr:"inmek, alçalmak", ex:"They watched the plane slowly ___ toward the runway."},
-  {en:"strict", pos:"sıfat", tr:"katı(kuralcı), sıkı, kesin", ex:"Their teacher was known for being very ___."},
-  {en:"pursue", pos:"fiil", tr:"peşinden gitmek, sürdürmek", ex:"She decided to ___ a career in medicine."},
-  {en:"commitment", pos:"isim", tr:"bağlılık, taahhüt", ex:"Marriage requires a strong ___ from both people."},
-  {en:"initial", pos:"sıfat/isim", tr:"ilk, başlangıç; baş harf", ex:"Their ___ meeting didn't go as planned."},
-  {en:"vial", pos:"isim", tr:"küçük şişe, flakon", ex:"The nurse filled a ___ with the vaccine."},
-  {en:"intensity", pos:"isim", tr:"yoğunluk, şiddet", ex:"The ___ of the storm increased overnight."},
-  {en:"grumble", pos:"fiil", tr:"homurdanmak, mırıldanmak", ex:"He began to ___ about the long wait."},
-  {en:"various", pos:"sıfat", tr:"çeşitli, çeşit çeşit", ex:"The shop sells ___ types of tea."},
-  {en:"delicate", pos:"sıfat", tr:"narin, hassas, kırılgan", ex:"She handled the ___ vase with great care."},
-  {en:"frown", pos:"fiil/isim", tr:"kaşlarını çatmak; kaş çatma", ex:"He began to ___ when he read the letter."},
-  {en:"succumb", pos:"fiil", tr:"boyun eğmek, teslim olmak", ex:"He eventually began to ___ to the pressure."},
-  {en:"waiter", pos:"isim", tr:"garson", ex:"The ___ brought their orders to the table."},
-  {en:"exhibition", pos:"isim", tr:"sergi", ex:"They visited an art ___ downtown."},
-  {en:"implement", pos:"fiil/isim", tr:"yürürlüğe koymak; araç", ex:"The company decided to ___ the new policy next month."},
-  {en:"reassurance", pos:"isim", tr:"güvence, teselli", ex:"She needed some ___ before the exam."},
-  {en:"interpret", pos:"fiil", tr:"yorumlamak, tercüme etmek", ex:"It's hard to ___ his silence correctly."},
-  {en:"dispute", pos:"isim/fiil", tr:"anlaşmazlık; itiraz etmek", ex:"The two neighbors had a long ___ over the fence."},
-  {en:"clench", pos:"fiil", tr:"sıkmak (yumruk, diş)", ex:"He began to ___ his fists in anger."},
-  {en:"dense", pos:"sıfat", tr:"yoğun, sık", ex:"They walked through the ___ forest."},
-  {en:"embodiment", pos:"isim", tr:"somutlaşmış hali, cisimleşme", ex:"She is the ___ of patience and kindness."},
-  {en:"spill", pos:"fiil/isim", tr:"dökülmek, dökmek", ex:"He accidentally let the coffee ___ across the table."},
-  {en:"stifle", pos:"fiil", tr:"bastırmak, boğmak (duygu, ses)", ex:"She tried to ___ a laugh during the meeting."},
-  {en:"foreboding", pos:"isim/sıfat", tr:"kötü önsezi", ex:"A strange sense of ___ filled the room."},
-  {en:"utterly", pos:"zarf", tr:"tamamen, son derece", ex:"The plan was ___ ridiculous."},
-  {en:"pavement", pos:"isim", tr:"kaldırım", ex:"They walked slowly along the ___."},
-  {en:"modest", pos:"sıfat", tr:"mütevazı, gösterişsiz", ex:"Despite his success, he remained ___ about his achievements."},
-  {en:"redirecting", pos:"fiil (-ing)", tr:"yönlendirme, yeniden yönlendirme", ex:"The website is ___ visitors to the new page."},
-  {en:"recently", pos:"zarf", tr:"son zamanlarda, yakın zamanda", ex:"She ___ moved to a new city."},
-  {en:"struggle", pos:"fiil/isim", tr:"mücadele etmek; mücadele", ex:"He began to ___ with the heavy boxes."},
-  {en:"indentation", pos:"isim", tr:"girinti, paragraf başı boşluğu", ex:"Each paragraph should begin with a small ___."},
-  {en:"appropriate", pos:"sıfat", tr:"uygun, yerinde", ex:"She chose ___ clothes for the interview."},
-  {en:"frustration", pos:"isim", tr:"hayal kırıklığı, engellenmişlik", ex:"He felt a wave of ___ after the third failed attempt."},
-  {en:"seamless", pos:"sıfat", tr:"kusursuz, pürüzsüz, sorunsuz", ex:"The transition between the two songs was completely ___."},
-  {en:"bargain", pos:"isim/fiil", tr:"pazarlık; kelepir; pazarlık etmek", ex:"She managed to ___ for a lower price at the market."},
-  {en:"propose", pos:"fiil", tr:"önermek, teklif etmek", ex:"He decided to ___ a new plan to the team."},
-  {en:"crucial", pos:"sıfat", tr:"hayati, kritik", ex:"Getting enough sleep is ___ for your health."},
-  {en:"conduct", pos:"fiil/isim", tr:"yürütmek, yönetmek; davranış", ex:"The scientists began to ___ a new experiment."},
-  {en:"pace", pos:"isim/fiil", tr:"tempo; adımlamak", ex:"She increased her ___ during the last mile of the race."},
-  {en:"loan", pos:"isim/fiil", tr:"kredi, ödünç", ex:"They took out a ___ to buy the house."},
-  {en:"subtle", pos:"sıfat", tr:"ince, belli belirsiz, üstü kapalı", ex:"There was a ___ change in her tone of voice."},
-  {en:"nape", pos:"isim", tr:"ense", ex:"He felt a cold breeze on the ___ of his neck."},
-  {en:"prejudice", pos:"isim", tr:"önyargı", ex:"She tried to judge the situation without ___."},
-  {en:"fasten", pos:"fiil", tr:"bağlamak, kemer takmak", ex:"Please ___ your seatbelt before takeoff."},
-  {en:"shrug", pos:"fiil/isim", tr:"omuz silkmek", ex:"He gave a small ___ when asked about his plans."},
-  {en:"proficient", pos:"sıfat", tr:"yetkin, usta, becerikli", ex:"She became ___ in French after two years abroad."},
-  {en:"pertain", pos:"fiil", tr:"ilgili olmak, ait olmak", ex:"These rules ___ only to full-time employees."},
-  {en:"aisle", pos:"isim", tr:"koridor (sıralar arası)", ex:"She walked down the ___ to find her seat."},
-  {en:"align", pos:"fiil", tr:"hizalamak, uyumlu hale getirmek", ex:"They worked to ___ their goals with the company's mission."},
-  {en:"chamber", pos:"isim", tr:"oda, meclis salonu", ex:"The council met in a small ___ behind the hall."},
-  {en:"accelerate", pos:"fiil", tr:"hızlandırmak", ex:"The car began to ___ as it left the town."},
-  {en:"distinguish", pos:"fiil", tr:"ayırt etmek, ayırmak", ex:"It's hard to ___ the twins from each other."},
-  {en:"conclude", pos:"fiil", tr:"sonuçlandırmak, sona erdirmek, karara varmak", ex:"They decided to ___ the meeting early."},
-  {en:"perceive", pos:"fiil", tr:"algılamak, fark etmek", ex:"She began to ___ a change in his behavior."},
-  {en:"gravel", pos:"isim", tr:"çakıl", ex:"The path was covered with loose ___."},
-  {en:"slope", pos:"isim/fiil", tr:"eğim, yamaç; eğimli olmak", ex:"They walked carefully down the steep ___."},
-];
-
-let WORDS = [];
-const LIMIT = 30;
-let mastery = {};
-
-function shuffle(arr){
-  const a = arr.slice();
-  for(let i=a.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]] = [a[j],a[i]];
-  }
-  return a;
-}
-
-function selectNewSet() {
-  const karisik = shuffle([...ALL_WORDS]);
-  WORDS = karisik.slice(0, Math.min(LIMIT, ALL_WORDS.length));
-  document.getElementById('eyebrowLabel').textContent = WORDS.length + ' kart · sözcük çekmecesi';
-  document.getElementById('subLabel').textContent = 'Kartları çevir, eşleştir, sına — ' + WORDS.length + ' kelimeyi kalıcı hafızaya yerleştir.';
-
-  mastery = {};
-  WORDS.forEach(w => mastery[w.en] = 'new');
-
-  typeState = null;
-
-  renderProgress();
-  const aktifTab = document.querySelector('nav.tabs button.active');
-  if(aktifTab) render(aktifTab.dataset.tab);
-}
-
-function bumpMastery(en, success){
-  const cur = mastery[en];
-  if(success){
-    mastery[en] = (cur === 'learning') ? 'known' : 'learning';
+function render(){
+  syncQual();
+  $('hide').textContent=S.hide?'Alışı göster':'Alışı gizle';
+  $('hide').setAttribute('aria-pressed',!!S.hide);
+  $('priceGroup').hidden=!!S.hide;
+  var v=cur(), r=calc(S.prof,S.mode,Object.assign({},v,{p:v.p[S.color]}),S.kar), h;
+  var ao=S.hide?'•••••':fmt(r.O,3);
+  if(r.levha){
+    h='<div class="hero'+(S.hide?' one':'')+'"><svg class="hbox" viewBox="-4 -2 78 56" aria-hidden="true"><use href="#levha" width="78" height="56" x="-4" y="-2"/></svg>'+(S.hide?'':'<div><span>Levha alış</span><b>'+ao+'</b><i>₺ / adet</i></div>')+'<div><span>Levha satış</span><b>'+fmt(r.R,3)+'</b><i>₺ / adet</i></div></div>'+
+      '<div class="list"><dl>'+item('Levha m²',fmt(r.K,4),'m²')+item('2000 m² adeti',fmt(r.S,0),'adet')+item('5000 m² adeti',fmt(r.T,0),'adet')+item('20000 m² adeti',fmt(r.U,0),'adet')+'</dl></div>';
   } else {
-    if(cur !== 'known') mastery[en] = 'learning';
+    h='<div class="hero'+(S.hide?' one':'')+'"><svg class="hbox" viewBox="-8 -16 80 90" aria-hidden="true"><use href="#koli" width="80" height="90" x="-8" y="-16"/></svg>'+(S.hide?'':'<div><span>Kutu alış</span><b>'+ao+'</b><i>₺ / kutu</i></div>')+'<div><span>Kutu satış</span><b>'+fmt(r.R,3)+'</b><i>₺ / kutu</i></div></div>'+
+      '<div class="list"><dl>'+
+      item('Kesim ölçüsü (I × J)',fmt(r.I,0)+' × '+fmt(r.J,0),'mm')+
+      item('Kutu m²',fmt(r.K,4),'m²')+
+      item('Gramaj',fmt(r.L*1000,0),'g/m²')+
+      item('Kutu ağırlığı',fmt(r.M,3),'kg')+
+      (S.hide?'':item('Kğ alış',fmt(r.P,3),'₺/kg'))+
+      item('Kğ satış',fmt(r.Q,3),'₺/kg')+
+      item('2000 m² adeti',fmt(r.S,0),'adet')+item('5000 m² adeti',fmt(r.T,0),'adet')+
+      item('20000 m² adeti',fmt(r.U,0),'adet')+
+      '</dl></div>';
   }
-  updateCloudStats(en, success); // BULUTA YAZ
-  registerActivity(success); // SERİ VE İSTATİSTİK GÜNCELLE
-  renderProgress();
+  h+='<button type="button" class="btn" id="mkOffer">Fiyat teklifi oluştur'+(S.off.lines.length?' ('+S.off.lines.length+' koli hafızada)':'')+'</button>';
+  $('result').innerHTML=h;
 }
 
-function renderProgress(){
-  const rail = document.getElementById('progressRail');
-  rail.innerHTML = '';
-  WORDS.forEach(w=>{
-    const d = document.createElement('div');
-    d.className = 'dot ' + (mastery[w.en] === 'known' ? 'known' : mastery[w.en] === 'learning' ? 'learning' : '');
-    d.title = w.en;
-    rail.appendChild(d);
-  });
-}
-
-const panel = document.getElementById('panel');
-const tabsNav = document.getElementById('tabs');
-tabsNav.addEventListener('click', e=>{
-  const btn = e.target.closest('button[data-tab]');
-  if(!btn) return;
-  [...tabsNav.children].forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  render(btn.dataset.tab);
+document.addEventListener('input',function(e){
+  var t=e.target, id=t.id, v=cur(); if(!id)return;
+  if(/^d[0-2]$/.test(id)&&/\D\s*\d/.test(t.value.replace(/[.,]\d{1,2}(?!\d)/g,''))&&fillDims(t.value))return;
+  var x=num(t.value);
+  if(id[0]==='l'&&id.length===2){v.l[+id[1]]=x;v.q=-1;}
+  else if(id[0]==='d'&&id.length===2)v.d[+id[1]]=x;
+  else if(id==='price'){v.p[S.color]=x;v.t=-1;}
+  else if(id==='kar')S.kar=x;
+  else if(id==='ei')v.ei=x;
+  else if(id==='ej')v.ej=x;
+  else return;
+  save();render();
 });
-
-function render(tab){
-  if(tab === 'type') renderType();
-  else if(tab === 'hard') renderHardWords(); // YENİ BULUT SEKME
-  else if(tab === 'focusedType') renderFocusedType();
-  else if(tab === 'stats') renderStats();
+$('modeSeg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.mode=b.dataset.mode;save();build();});
+$('profSeg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.prof=b.dataset.prof;save();build();});
+$('qual').addEventListener('change',function(){
+  var v=cur(), i=+$('qual').value;
+  if(i<0){v.q=-1;save();render();return;}
+  applyQual(v,i);save();build();
+});
+$('bkSeg').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var v=cur();v.bk=b.dataset.bk;
+  if(v.q>=0)v.p[S.color]=listPrice(QUALS[qProf()][v.q],v.t);
+  save();build();
+});
+$('hide').addEventListener('click',function(){S.hide=!S.hide;save();render();});
+$('dlSeg').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var v=cur();v.dl=b.dataset.dl;v.q=-1;save();build();
+});
+$('tierSeg').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var v=cur();v.t=+b.dataset.t;
+  if(v.q>=0)v.p[S.color]=listPrice(QUALS[qProf()][v.q],v.t);
+  save();build();
+});
+$('colSeg').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  S.color=b.dataset.col;
+  var v=cur();
+  if(v.q>=0&&qCol(QUALS[qProf()][v.q])!==S.color)v.q=-1;
+  save();build();
+});
+$('reset').addEventListener('click',function(){delete S.vals[vkey()];S.kar=12;S.off.isim='';S.off.cari='';S.off.lines=[];S.off.cur={urun:'',adet:''};save();build();});
+function parseDims(text){
+  var m=String(text).match(/\d+(?:[.,]\d{1,2}(?!\d))?/g);
+  if(!m)return null;
+  var n=m.map(function(x){return parseFloat(x.replace(',','.'));});
+  var need=S.prof==='LEVHA'?2:3;
+  if(n.length<need)return null;
+  var a=n[0],b=n[1];
+  return [Math.min(a,b),Math.max(a,b),need===3?n[2]:null];
 }
+function fillDims(text){
+  var d=parseDims(text); if(!d)return false;
+  var v=cur();
+  v.d[0]=d[0]; v.d[1]=d[1]; if(d[2]!==null)v.d[2]=d[2];
+  var f=function(x){return String(x).replace('.',',');};
+  $('d0').value=f(v.d[0]); $('d1').value=f(v.d[1]); if($('d2'))$('d2').value=f(v.d[2]);
+  save(); render(); return true;
+}
+document.addEventListener('paste',function(e){
+  var t=e.target; if(!t||t.tagName!=='INPUT'||!/^d[0-2]$/.test(t.id))return;
+  var txt=(e.clipboardData||window.clipboardData).getData('text');
+  if(fillDims(txt)){e.preventDefault();}
+});
+var lastFocus=0;
+function selAll(t){try{t.select();t.setSelectionRange(0,t.value.length);}catch(x){}}
+function onFocus(e){
+  var t=e.target; if(!t||t.tagName!=='INPUT'||t.closest('#offer'))return;
+  lastFocus=Date.now();
+  selAll(t); setTimeout(function(){selAll(t);},0); setTimeout(function(){selAll(t);},60);
+}
+function onTap(e){
+  var t=e.target; if(!t||t.tagName!=='INPUT'||t.closest('#offer'))return;
+  if(Date.now()-lastFocus<500){selAll(t); setTimeout(function(){selAll(t);},0); setTimeout(function(){selAll(t);},60);}
+}
+document.addEventListener('focusin',onFocus);
+document.addEventListener('click',onTap);
+document.addEventListener('touchend',onTap);
+document.addEventListener('mouseup',function(e){var t=e.target;if(t&&t.tagName==='INPUT'&&Date.now()-lastFocus<500)e.preventDefault();});
 
-// --- YENİ ZORLU KELİMELER SEKME MANTIĞI ---
-// --- YENİ ZORLU KELİMELER SEKME MANTIĞI ---
-async function renderHardWords() {
-  panel.innerHTML = `
-    <div class="fc-pos">BULUTTAN VERİLER ÇEKİLİYOR...</div>
-    <div style="text-align:center; padding:20px; font-size:24px;">⏳</div>
-  `;
-  try {
-    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
-    let stats = [];
-    snapshot.forEach(doc => {
-      let data = doc.data();
-      let wordObj = ALL_WORDS.find(w => w.en === data.en);
-      if(wordObj && data.yanlis > 0) {
-        stats.push({ ...wordObj, dogru: data.dogru, yanlis: data.yanlis });
-      }
-    });
-    
-    stats.sort((a,b) => b.yanlis - a.yanlis); // En çok yanlış yapılanlar en üste
-    
-    let html = `
-      <div class="fc-pos">EN ÇOK ZORLANDIĞIN KELİMELER (BULUT KAYDI)</div>
-      <div style="text-align:center; margin-bottom: 20px;">
-        <button class="btn" style="border-color:var(--stamp); color:var(--stamp-dark);" onclick="resetCloudStats()">🗑️ Tüm Geçmişi Sıfırla</button>
-      </div>
-    `;
-
-    if(stats.length === 0) {
-      html += `<div class="fc-example" style="margin-top:20px;">Henüz hiç yanlış yapmadın! Eşleştirme veya Quiz oynayarak hafızayı doldur. 🎉</div>`;
-    } else {
-      stats.forEach(s => {
-        html += `
-          <div class="review-row" style="background:#fff; border-color:var(--kraft-light)">
-            <div class="review-en">${s.en}</div>
-            <div class="review-tr">${s.tr}</div>
-            <div class="stat-wrong">Yanlış: ${s.yanlis}</div>
-            <div class="stat-correct">Doğru: ${s.dogru}</div>
-          </div>
-        `;
+/* ---------- Fiyat teklifi ---------- */
+var KALITE={A:'BC DALGA',B:'B DALGA',C:'C DALGA',EB:'EB DALGA',LEVHA:'LEVHA'};
+var NOTLAR=['1) Fiyatlarımıza KDV dahil değildir. Teslimat termin tarihidir.','2) Vade 90 günlük müşteri çekiyle ödeme yapılacaktır.','3) Peşin ödemelerde %5 iskonto yapılır.','4) Klişesi olan işlerde 7, klişesi olmayan işlerde 10 gün içinde sevk edilir.'];
+var FIRMA=['DESEN PACK AMBALAJ SAN VE TİC.LTD.ŞTİ','F.Çakmak Mh.10640 Sok.No 2/108 KONYA'];
+function esc(x){return String(x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function ns(x){return String(x).replace('.',',');}
+function bugun(){var d=new Date();function z(n){return (n<10?'0':'')+n;}return z(d.getDate())+'.'+z(d.getMonth()+1)+'.'+d.getFullYear();}
+function curLine(){
+  var v=cur(), r=calc(S.prof,S.mode,Object.assign({},v,{p:v.p[S.color]}),S.kar);
+  var kal=KALITE[S.prof]+((S.prof!=='LEVHA'&&S.mode==='tam')?' TAM KAPAK':'');
+  var olcu=S.prof==='LEVHA'?ns(v.d[0])+'x'+ns(v.d[1]):ns(v.d[0])+'x'+ns(v.d[1])+'x'+ns(v.d[2]);
+  var base=fmt(r.R,2)+' ₺', ov=S.off.cur.fiyat;
+  return {kalite:kal,olcu:olcu,base:base,fiyat:(ov&&ov.b===base)?ov.v:base};
+}
+function allLines(){
+  var L=S.off.lines.slice(), a=Math.round(num(S.off.cur.adet));
+  if(a>0){var c=curLine();L.push({urun:S.off.cur.urun,olcu:c.olcu,kalite:c.kalite,adet:a,fiyat:c.fiyat});}
+  return L;
+}
+function paperHtml(){
+  var o=S.off, rows='', L=allLines();
+  if(!L.length){rows='<tr><td class="empty" colspan="5">Henüz ürün eklenmedi. Hesabı yapıp "Bu hesabı teklife ekle"ye bas.</td></tr>';}
+  L.forEach(function(l,i){
+    rows+='<tr><td>'+esc(l.urun)+' <button type="button" class="del no-copy" data-del="'+i+'" aria-label="Satırı sil">×</button></td><td>'+esc(l.olcu)+'</td><td>'+esc(l.kalite)+'</td><td class="r">'+esc(fmt(l.adet,0))+'</td><td class="r"><span class="pe" contenteditable="true" inputmode="decimal" data-pe="'+i+'">'+esc(l.fiyat)+'</span></td></tr>';
+  });
+  var logo=document.querySelector('header .logo');
+  return '<div class="p-head"><div class="p-logo">'+(logo?logo.innerHTML:'')+'</div><div><div class="p-h">FİYAT TEKLİFİ</div><div class="p-date"><b>TARİH</b> '+bugun()+'</div></div></div>'+
+    '<div class="p-meta"><b>SAYIN</b><span>'+esc(o.isim)+'</span><b>FİRMA ADI</b><span>'+esc(o.cari)+'</span></div>'+
+    '<div>Aşağıda detaylarını belirttiğimiz ürünlerin teklifi bilgilerinize sunulmuştur.<br>Değerli siparişlerinizi bekler, iyi çalışmalar dileriz.</div>'+
+    '<div class="p-tbl"><table><thead><tr><th>ÜRÜN ADI</th><th>EN*BOY*YÜK</th><th>KALİTE</th><th class="r">ADET</th><th class="r">FİYAT</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="p-bottom">'+
+    '<div class="p-sign"><small>SAYGILARIMIZLA,</small><b>TALHA GÜL</b><span><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:-2px;margin-right:5px" fill="none" stroke="#00776e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>+90 533 393 70 46</span><span><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:-2px;margin-right:5px" fill="none" stroke="#00776e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>talha@desenpack.com</span></div>'+
+    '<div class="p-notes"><b>Açıklamalar</b>'+NOTLAR.map(function(n){return '<p>'+esc(n)+'</p>';}).join('')+'</div>'+
+    '<div class="p-foot"><p><b>'+FIRMA[0]+'</b></p><p>'+FIRMA[1]+'</p><p>web: www.desenpack.com</p><p>mail: kadir.gul@desenpack.com</p></div></div>';
+}
+function plainText(){
+  var o=S.off, t=['FİYAT TEKLİFİ','TARİH: '+bugun(),'','SAYIN: '+o.isim,'FİRMA ADI: '+o.cari,'',
+    'Aşağıda detaylarını belirttiğimiz ürünlerin teklifi bilgilerinize sunulmuştur.','Değerli siparişlerinizi bekler, iyi çalışmalar dileriz.',''];
+  allLines().forEach(function(l){t.push(l.urun+' | '+l.olcu+' | '+l.kalite+' | '+fmt(l.adet,0)+' adet | '+l.fiyat);});
+  t.push('','Açıklamalar');NOTLAR.forEach(function(n){t.push(n);});
+  t.push('','SAYGILARIMIZLA,','TALHA GÜL','Tel: +90 533 393 70 46','talha@desenpack.com','',FIRMA[0],FIRMA[1],'web: www.desenpack.com','mail: kadir.gul@desenpack.com');
+  return t.join('\n');
+}
+function tableHtml(){
+  var o=S.off, td='border:1px solid #999;padding:4px 8px;', h='<p><b>Fiyat Teklifi</b> &nbsp; TARİH '+bugun()+'</p><p>SAYIN: '+esc(o.isim)+'<br>FİRMA ADI: '+esc(o.cari)+'</p>';
+  h+='<table style="border-collapse:collapse"><tr>'+['ÜRÜN ADI','EN*BOY*YÜK','KALİTE','ADET','FİYAT'].map(function(x){return '<th style="'+td+'background:#e3eeee">'+x+'</th>';}).join('')+'</tr>';
+  allLines().forEach(function(l){h+='<tr><td style="'+td+'">'+esc(l.urun)+'</td><td style="'+td+'">'+esc(l.olcu)+'</td><td style="'+td+'">'+esc(l.kalite)+'</td><td style="'+td+'text-align:right">'+esc(fmt(l.adet,0))+'</td><td style="'+td+'text-align:right">'+esc(l.fiyat)+'</td></tr>';});
+  h+='</table><p>SAYGILARIMIZLA,<br><b>TALHA GÜL</b><br>Tel: +90 533 393 70 46<br>talha@desenpack.com</p><p>'+NOTLAR.map(esc).join('<br>')+'</p><p><b>'+FIRMA[0]+'</b><br>'+FIRMA[1]+'<br>web: www.desenpack.com<br>mail: kadir.gul@desenpack.com</p>';
+  return h;
+}
+$('paper').addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.pe!==undefined){e.preventDefault();e.target.blur();}});
+$('paper').addEventListener('focusout',function(e){
+  var t=e.target;if(!t.dataset||t.dataset.pe===undefined)return;
+  var v=t.textContent.trim(), i=+t.dataset.pe, n=S.off.lines.length;
+  if(v&&!/[₺]|TL/i.test(v))v+=' ₺';
+  if(!v)v=null;
+  if(i<n){if(v)S.off.lines[i].fiyat=v;}
+  else{var c=curLine();S.off.cur.fiyat=v?{v:v,b:c.base}:null;}
+  save();renderOffer();
+});
+function offMsg(t){var m=$('oMsg');m.textContent=t;clearTimeout(offMsg.t);offMsg.t=setTimeout(function(){m.textContent='';},3500);}
+function renderOffer(){
+  var o=S.off, c=curLine();
+  $('paper').innerHTML=paperHtml();
+  $('oWa').href='https://wa.me/?text='+encodeURIComponent(plainText());
+  $('oCur').textContent='Hesapladığın koli: '+c.kalite+', '+c.olcu+', satış '+c.fiyat+(Math.round(num(S.off.cur.adet))>0?'. Teklifte son satır olarak görünüyor.':'. Adet yazınca teklife eklenir.');
+}
+function openOffer(){
+  var o=S.off; $('oIsim').value=o.isim; $('oCari').value=o.cari; $('oUrun').value=o.cur.urun; $('oAdet').value=o.cur.adet;
+  $('offer').hidden=false; document.body.style.overflow='hidden'; renderOffer();
+  $('offer').scrollTop=0; setTimeout(function(){try{($('oCari').value?$('oUrun'):$('oCari')).focus();}catch(e){}},50);
+}
+function closeOffer(){$('offer').hidden=true;document.body.style.overflow='';}
+document.addEventListener('click',function(e){
+  var t=e.target;
+  if(t.id==='mkOffer')openOffer();
+  else if(t.id==='offClose'||t===$('offer'))closeOffer();
+  else if(t.dataset&&t.dataset.del!==undefined&&t.closest('#paper')){
+    var i=+t.dataset.del;
+    if(i<S.off.lines.length){S.off.lines.splice(i,1);}else{S.off.cur.adet='';$('oAdet').value='';}
+    save();renderOffer();render();
+  }
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('offer').hidden)closeOffer();});
+$('offer').addEventListener('input',function(e){
+  var t=e.target, o=S.off;
+  if(t.id==='oIsim')o.isim=t.value; else if(t.id==='oCari')o.cari=t.value; else if(t.id==='oUrun')o.cur.urun=t.value; else if(t.id==='oAdet')o.cur.adet=t.value; else return;
+  save(); renderOffer();
+});
+$('oKeep').addEventListener('click',function(){
+  var adet=Math.round(num($('oAdet').value));
+  if(!(adet>0)){offMsg('Önce adedi yaz.');$('oAdet').focus();return;}
+  var c=curLine(); S.off.lines.push({urun:S.off.cur.urun,olcu:c.olcu,kalite:c.kalite,adet:adet,fiyat:c.fiyat});
+  S.off.cur={urun:'',adet:''}; save(); closeOffer(); render();
+});
+$('oClear').addEventListener('click',function(){S.off.lines=[];S.off.cur={urun:'',adet:''};$('oUrun').value='';$('oAdet').value='';save();renderOffer();render();offMsg('Ürünler temizlendi.');});
+$('oPrint').addEventListener('click',function(){if(window.claude||/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform))){makePdf();return;}try{window.print();}catch(e){makePdf();}});
+function loadJs(u){return new Promise(function(ok,no){var s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
+function makePdf(){
+  var b=$('oPdf');b.disabled=true;offMsg('PDF hazırlanıyor...');
+  var W=794,H=1123,host=document.createElement('div');
+  host.style.cssText='position:fixed;left:-10000px;top:0;width:'+W+'px;';
+  var paper=document.createElement('div');paper.className='paper';paper.style.cssText='width:'+W+'px;min-height:'+H+'px;aspect-ratio:auto;border:0;border-radius:0;padding:40px 44px;box-sizing:border-box;font-size:14px';
+  paper.innerHTML=paperHtml();
+  [].forEach.call(paper.querySelectorAll('.no-copy'),function(n){n.remove();});[].forEach.call(paper.querySelectorAll('.pe'),function(n){n.style.border='0';});
+  host.appendChild(paper);document.body.appendChild(host);
+  Promise.all([window.html2canvas||loadJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),(window.jspdf||loadJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'))])
+  .then(function(){return window.html2canvas(paper,{scale:2,backgroundColor:'#ffffff',useCORS:true});})
+  .then(function(cv){
+    var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
+    var pw=210,ph=297,ih=cv.height*pw/cv.width, img=cv.toDataURL('image/jpeg',0.95);
+    if(ih<=ph+1){pdf.addImage(img,'JPEG',0,0,pw,Math.min(ih,ph));}
+    else{var y=0;while(y<ih){pdf.addImage(img,'JPEG',0,-y,pw,ih);y+=ph;if(y<ih)pdf.addPage();}}
+    var name='Fiyat-Teklifi-'+(S.off.cari||'Desen-Pack').replace(/[^\wÀ-ɏĞğİıŞş -]/g,'').trim().replace(/\s+/g,'-')+'.pdf';
+    var blob=pdf.output('blob');
+    var viaShare=function(){
+      var file=new File([blob],name,{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){return navigator.share({files:[file],title:'Fiyat Teklifi'}).catch(function(){});}
+      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+      offMsg('PDF indirildi.');
+    };
+    if(window.claude&&window.claude.use){
+      return window.claude.use('downloads').then(function(d){
+        if(!d)return viaShare();
+        return d.save({filename:name,data:blob}).then(function(){offMsg('PDF kaydedildi. Dosyayı WhatsApp\'a ekleyebilirsin.');},function(e){if(!e||e.code!=='declined')offMsg('PDF kaydedilemedi.');});
       });
     }
-    panel.innerHTML = html;
-  } catch (error) {
-    panel.innerHTML = `<div class="fc-pos" style="color:var(--stamp-dark)">HATA OLUŞTU</div><div class="fc-example">Veriler çekilemedi. İnternet bağlantını kontrol et.</div>`;
-  }
+    return viaShare();
+  })
+  .catch(function(){offMsg('PDF oluşturulamadı. İnternet bağlantısını kontrol et.');})
+  .then(function(){host.remove();b.disabled=false;});
 }
-
-// --- GEÇMİŞİ SIFIRLAMA FONKSİYONU ---
-async function resetCloudStats() {
-  if(!confirm("Tüm hata geçmişini tamamen sıfırlamak istediğine emin misin? Bu işlem geri alınamaz!")) return;
-
-  panel.innerHTML = `
-    <div class="fc-pos">GEÇMİŞ SİLİNİYOR... Lütfen bekle.</div>
-    <div style="text-align:center; padding:20px; font-size:24px;">⏳</div>
-  `;
-  try {
-    const snapshot = await db.collection('userStats').doc(userCode).collection('words').get();
-    const batch = db.batch();
-    
-    snapshot.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-    
-    await batch.commit();
-    alert("Tüm hata geçmişi tertemiz oldu! 🧹✨");
-    renderHardWords(); // Listeyi boş haliyle yeniden çiz
-  } catch (error) {
-    alert("Sıfırlama sırasında hata oluştu: " + error.message);
-    renderHardWords();
-  }
-}
-// ================= İSTATİSTİK PANELİ =================
-async function renderStats(){
-  panel.innerHTML = `<div style="text-align:center; padding:40px 10px;"><div class="fc-pos">İSTATİSTİKLER YÜKLENİYOR…</div><div style="font-size:24px;margin-top:14px;">⏳</div></div>`;
-  let allStats = {};
-  try{ allStats = await fetchAllWordStats(); }
-  catch(err){ /* buluta erişilemezse yine de genel serileri gösterebiliriz */ }
-
-  const today = todayStr();
-  let known = 0, learning = 0, seen = 0;
-  ALL_WORDS.forEach(w=>{
-    const s = allStats[w.en];
-    if(!s){ return; }
-    const d = s.dogru || 0, y = s.yanlis || 0;
-    if(d + y === 0){ return; }
-    seen++;
-    if(d + y >= 3 && knowledgeScore(d, y) >= 0.7) known++; else learning++;
-  });
-  const untouched = Math.max(ALL_WORDS.length - seen, 0);
-
-  const totalAnswered = userStats.totalCorrect + userStats.totalWrong;
-  const accuracy = totalAnswered > 0 ? Math.round((userStats.totalCorrect / totalAnswered) * 100) : 0;
-
-  const pct = (n)=> ALL_WORDS.length ? Math.round((n/ALL_WORDS.length)*100) : 0;
-
-  panel.innerHTML = `
-    <div class="fc-pos" style="margin-bottom:14px;">SERİ & MOTİVASYON</div>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num">🔥 ${userStats.streak}</div><div class="stat-label">Günlük Seri</div></div>
-      <div class="stat-card"><div class="stat-num">🏆 ${userStats.longestStreak}</div><div class="stat-label">En Uzun Seri</div></div>
-      <div class="stat-card"><div class="stat-num">${userStats.totalReviews}</div><div class="stat-label">Toplam Tekrar</div></div>
-      <div class="stat-card"><div class="stat-num">%${accuracy}</div><div class="stat-label">Doğruluk Oranı</div></div>
-    </div>
-
-    <div class="fc-pos" style="margin-bottom:10px;">KELİME HAVUZU (${ALL_WORDS.length} kelime)</div>
-    <div class="mastery-bar-wrap">
-      <div style="width:${pct(known)}%; background:var(--sage);"></div>
-      <div style="width:${pct(learning)}%; background:var(--kraft-light);"></div>
-      <div style="width:${pct(untouched)}%; background:var(--paper);"></div>
-    </div>
-    <div class="mastery-legend">
-      <span><i class="legend-dot" style="background:var(--sage);"></i>Öğrenildi: ${known}</span>
-      <span><i class="legend-dot" style="background:var(--kraft-light);"></i>Öğreniliyor: ${learning}</span>
-      <span><i class="legend-dot" style="background:var(--paper); border:1px solid var(--kraft-light);"></i>Hiç görülmedi: ${untouched}</span>
-    </div>
-
-  `;
-}
-
-// ================= TYPING =================
-let typeState = null;
-
-function newTypeRound(){
-  const order = shuffle(WORDS);
-  typeState = { order, index:0, correct:0, checked:false, wrong:[] };
-}
-
-function renderType(){
-  if(!typeState) newTypeRound();
-  if(typeState.index >= typeState.order.length){
-    const wrongList = typeState.wrong.map(w => `<div class="review-row"><div class="review-en">${w.en}</div><div class="review-mid"><div class="review-tr">${w.tr}</div><div class="review-ex">${w.ex.replace('___', w.en)}</div></div><div class="review-given">${w.given ? 'yazdığın: “' + w.given + '”' : 'boş bırakıldı'}</div></div>`).join('');
-    panel.innerHTML = `<div class="quiz-end"><div class="fc-pos">SONUÇ</div><div class="quiz-score">${typeState.correct} / ${typeState.order.length}</div><div class="fc-example">Yazarak hatırlamak en kalıcı yöntemdir.</div><div class="fc-controls" style="margin-top:20px;"><button class="btn primary" id="typeAgain">Tekrar Dene</button></div></div>${typeState.wrong.length ? `<div class="review-section"><div class="review-title">Yanlış / Eksik Yazılanlar (${typeState.wrong.length})</div>${wrongList}</div>` : `<div class="review-section"><div class="review-title" style="color:var(--sage);">Hepsini doğru yazdın 🎉</div></div>`}`;
-    document.getElementById('typeAgain').onclick = ()=>{ typeState = null; renderType(); };
-    return;
-  }
-  const w = typeState.order[typeState.index];
-  panel.innerHTML = `
-    <div class="type-meta"><span>SORU ${typeState.index+1} / ${typeState.order.length}</span><span>DOĞRU: ${typeState.correct}</span></div>
-    <div class="type-prompt"><div class="type-tr">${w.tr}</div><div class="type-example">${w.ex.split('___')[0]}<span class="type-blank">______</span>${w.ex.split('___')[1]}</div></div>
-    <div class="type-row"><input class="type-input mono" id="typeInput" placeholder="İngilizcesini yaz" autocomplete="off" spellcheck="false"><button class="btn primary" id="typeCheck">Kontrol Et</button></div>
-    <div class="type-feedback" id="typeFeedback"></div>
-  `;
-  const input = document.getElementById('typeInput');
-  input.focus();
-  const check = ()=>{
-    if(typeState.checked) return;
-    typeState.checked = true;
-    const val = input.value.trim().toLowerCase();
-    const success = val === w.en.toLowerCase();
-    input.classList.add(success ? 'correct' : 'incorrect');
-    input.disabled = true;
-    if(success) typeState.correct++; else typeState.wrong.push({...w, given: val});
-    bumpMastery(w.en, success);
-    document.getElementById('typeFeedback').textContent = success ? 'Doğru!' : `Doğrusu: "${w.en}"`;
-    setTimeout(()=>{ typeState.index++; typeState.checked = false; renderType(); }, 1400);
-  };
-  document.getElementById('typeCheck').onclick = check;
-  input.addEventListener('keydown', e=>{ if(e.key === 'Enter') check(); });
-}
-
-/* init */
-selectNewSet();
-loadUserStats();
-
-// 🌟 Tüm Kelimeleri Seçme Fonksiyonu
-function selectAllWords() {
-  // Tüm kelimeleri al ve karıştır (limit yok)
-  const karisik = shuffle([...ALL_WORDS]);
-  WORDS = karisik;
-  
-  // Başlık ve alt başlığı tüm kelime sayısına göre güncelle
-  document.getElementById('eyebrowLabel').textContent = WORDS.length + ' kart · sözcük çekmecesi';
-  document.getElementById('subLabel').textContent = 'Tüm kelimeler devrede! Kartları çevir, eşleştir, sına — ' + WORDS.length + ' kelimeyi hafızaya kazı.';
-
-  // Ustalık ve oyun durumlarını sıfırla
-  mastery = {};
-  WORDS.forEach(w => mastery[w.en] = 'new');
-
-  typeState = null;
-
-  // Ekranı yeni duruma göre çiz
-  renderProgress();
-  const aktifTab = document.querySelector('nav.tabs button.active');
-  if(aktifTab) render(aktifTab.dataset.tab);
-}
-
-// 🎯 Odaklı Yazma: bilme olasılığı en düşük 20 kelime
-const FOCUS_COUNT = 20;
-
-async function renderFocusedType() {
-  panel.innerHTML = `
-    <div class="fc-pos">BULUTTAKİ DOĞRU/YANLIŞ GEÇMİŞİN ANALİZ EDİLİYOR...</div>
-    <div style="text-align:center; padding:20px; font-size:24px;">⏳</div>
-  `;
-
-  try {
-    const stats = await fetchAllWordStats();
-    const attempted = [], unseen = [];
-
-    ALL_WORDS.forEach(w => {
-      const s = stats[w.en];
-      const d = s ? (s.dogru || 0) : 0;
-      const y = s ? (s.yanlis || 0) : 0;
-      if (d + y > 0) attempted.push({ ...w, dogru: d, yanlis: y, score: knowledgeScore(d, y) });
-      else unseen.push(w);
-    });
-
-    // En düşük skor = en az bilinen. Eşitlikte daha çok denenmiş (daha güvenilir) olan öne geçer.
-    attempted.sort((a, b) => (a.score - b.score) || ((b.dogru + b.yanlis) - (a.dogru + a.yanlis)));
-
-    let picked = attempted.slice(0, FOCUS_COUNT);
-    // Denenmiş kelime 20'den azsa, hiç görülmemiş kelimelerle tamamla
-    if (picked.length < FOCUS_COUNT) {
-      picked = picked.concat(shuffle(unseen).slice(0, FOCUS_COUNT - picked.length));
-    }
-
-    if (picked.length === 0) {
-      panel.innerHTML = `<div class="fc-example" style="margin-top:20px;">Kelime havuzu boş görünüyor.</div>`;
-      return;
-    }
-
-    WORDS = shuffle(picked);
-
-    document.getElementById('eyebrowLabel').textContent = WORDS.length + ' odaklı kart · sözcük çekmecesi';
-    document.getElementById('subLabel').textContent = '🎯 En az bildiğin ' + WORDS.length + ' kelimeyi yazarak hafızaya kazı.';
-
-    mastery = {};
-    WORDS.forEach(w => mastery[w.en] = 'new');
-    renderProgress();
-
-    typeState = null;
-    renderType();
-
-  } catch (error) {
-    console.error(error);
-    panel.innerHTML = `<div class="fc-pos" style="color:var(--stamp-dark)">HATA OLUŞTU</div><div class="fc-example">Veriler çekilemedi. İnternet bağlantını kontrol et.</div>`;
-  }
-}
-// --- PWA MOTORUNU AKTİF ETME ---
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').then(reg => console.log('Uygulama Motoru Hazır!')).catch(err => console.log('Motor Hatası:', err));
-  });
-}
+$('oPdf').addEventListener('click',makePdf);
+load();build();
 </script>
-</body>
-</html>
+
+</body></html>
